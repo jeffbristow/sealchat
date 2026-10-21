@@ -79,7 +79,7 @@ async function makeUpdate(version) {
 
   // a server with a certificate that isn't trusted is refused
   const S = path.join(root, 'tls'); fs.mkdirSync(S);
-  require('child_process').execSync(`openssl req -x509 -newkey rsa:2048 -nodes -keyout "${S}/k" -out "${S}/c" -days 1 -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1" 2>/dev/null`);
+  require('child_process').execSync(`openssl req -x509 -newkey rsa:2048 -nodes -keyout "${S}/k" -out "${S}/c" -days 1 -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1"`, { stdio: 'ignore' });   // 1.9.5: stdio, not "2>/dev/null" (Windows cmd has no /dev/null)
   const hs = require('https').createServer({ key: fs.readFileSync(S + '/k'), cert: fs.readFileSync(S + '/c') }, (q, r) => r.end(JSON.stringify(info)));
   await new Promise(r => hs.listen(0, '127.0.0.1', r));
   const tlsU = new Updater({ currentVersion: '1.0.0', updatesDir: root, settings: () => ({ updateUrl: `https://127.0.0.1:${hs.address().port}/update.php`, updateViaTor: false }), socksPort: () => null, publicKey: pub });

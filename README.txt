@@ -1,6 +1,14 @@
 =====================================================================
- SEAL CHAT 1.9.4 — private peer-to-peer chat over Tor, with PGP
+ SEAL CHAT 1.9.5 — private peer-to-peer chat over Tor, with PGP
 =====================================================================
+
+WHAT'S NEW IN 1.9.5   (an update file only)
+  • Fix (Android): a long message preview in the contact list made the
+    whole screen scroll sideways. On a phone the list is one flexible
+    grid column, and #sidebar had no min-width: 0, so the column grew to
+    fit the preview on one line. The preview (and a long contact name)
+    is now cut short with "…" instead. The desktop's fixed 290 px
+    column was never affected.
 
 WHAT'S NEW IN 1.9.4   (an update file only)
   • Fix (found by a developer testing the Android app): on the first

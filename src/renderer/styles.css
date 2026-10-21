@@ -55,7 +55,7 @@ a { color: var(--accent); }
 
 /* ---------- 5. Sidebar + contacts ---------- */
 #mainScreen:not(.hidden) { display: grid; grid-template-columns: 290px 1fr; }
-#sidebar { background: var(--bg-2); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+#sidebar { background: var(--bg-2); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; min-height: 0; }   /* 1.9.5: min-width 0 — on a phone (one 1fr column) a long message preview widened the list past the screen */
 .brand { display: flex; align-items: center; gap: 10px; padding: 14px 12px 8px 16px; font-weight: 700; font-size: 17px; }
 .brand-icon { width: 28px; height: 28px; }
 .net-pill { margin: 0 14px 8px; display: flex; align-items: center; gap: 8px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text-2); cursor: pointer; text-align: left; }
