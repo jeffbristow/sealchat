@@ -1,0 +1,16 @@
+<!-- Seal Chat macOS menu-bar icon (1.5.0): black "template" image (macOS tints it).
+     A seal head over a speech bubble, eyes cut out. Rendered by render-icon.js -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <mask id="m">
+      <rect width="64" height="64" fill="#fff"/>
+      <ellipse cx="25" cy="22" rx="4.2" ry="5" fill="#000"/>
+      <ellipse cx="39" cy="22" rx="4.2" ry="5" fill="#000"/>
+      <path d="M28.5 29 Q32 27.5 35.5 29 Q35 32.5 32 33.5 Q29 32.5 28.5 29 Z" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#m)" fill="#000">
+    <ellipse cx="32" cy="24" rx="19" ry="17"/>
+    <path d="M8 38 h48 a5 5 0 0 1 5 5 v9 a5 5 0 0 1 -5 5 h-30 l-9 7 v-7 h-9 a5 5 0 0 1 -5 -5 v-9 a5 5 0 0 1 5 -5 z"/>
+  </g>
+</svg>

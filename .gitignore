@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+# never commit the update signing key (keep it offline)
+build/update-signing-key.pem
+*.pem
+!build/update-signing-key.pub.pem

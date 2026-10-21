@@ -1,0 +1,148 @@
+{
+  "name": "sealchat",
+  "productName": "Seal Chat",
+  "version": "1.9.4",
+  "description": "Private peer-to-peer chat over Tor with OpenPGP encryption",
+  "main": "src/main/bootstrap.js",
+  "author": {
+    "name": "Jeff",
+    "email": "jeff@thebristows.com"
+  },
+  "license": "MIT",
+  "homepage": "https://jeffbristow.com/mysite/SealPost/",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/core-test.js && node test/clock-test.js && node test/files-test.js && node test/webfiles-test.js && node test/replies-test.js && node test/devices-test.js && node test/mailbox-test.js && node test/holds-test.js && node test/names-test.js && node test/invites-test.js && node test/linking-test.js && node test/qr-test.js && node test/update-test.js && node test/android-update-test.js && node test/noicu-test.js && node test/sha3-test.js && node test/setup-steps-test.js && node test/tor-route-test.js",
+    "test:tor": "node test/tor-test.js",
+    "test:web": "node test/web-test.js",
+    "test:webshare": "node test/webshare-test.js",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "update-file": "node build/make-update.js",
+    "dist:linux": "electron-builder --linux AppImage deb --x64 --publish never",
+    "dist:mac": "electron-builder --mac dir --x64 --arm64 --publish never",
+    "test:worker": "node test/worker-test.js",
+    "test:node18": "npx -y node@18.20.4 test/core-test.js && npx -y node@18.20.4 test/replies-test.js && npx -y node@18.20.4 test/devices-test.js && npx -y node@18.20.4 test/holds-test.js && npx -y node@18.20.4 test/invites-test.js && npx -y node@18.20.4 test/linking-test.js && npx -y node@18.20.4 test/names-test.js && npx -y node@18.20.4 test/update-test.js && npx -y node@18.20.4 test/android-update-test.js && npx -y node@18.20.4 test/noicu-test.js && npx -y node@18.20.4 test/setup-steps-test.js",
+    "postinstall": "node build/patch-openpgp.js",
+    "test:electron": "node build/test-in-electron.js"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.9.7",
+    "@scure/bip39": "^1.6.0",
+    "jsqr": "^1.4.0",
+    "openpgp": "^6.1.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "acorn": "^8.14.1",
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3",
+    "resedit": "^2.0.3"
+  },
+  "build": {
+    "appId": "com.sealchat.app",
+    "productName": "Seal Chat",
+    "copyright": "Seal Chat",
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "afterPack": "build/afterPack.js",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "publish": null,
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "extraResources": [
+        {
+          "from": "resources/tor/win-x64",
+          "to": "tor/win-x64"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Seal Chat",
+      "artifactName": "SealChat-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icons",
+      "category": "Network;Chat;InstantMessaging",
+      "synopsis": "Private peer-to-peer chat over Tor with PGP",
+      "description": "Seal Chat sends messages and files straight from your computer to your contact's over Tor .onion addresses, signed and encrypted with your own PGP key. No server in the middle.",
+      "maintainer": "Jeff <jeff@thebristows.com>",
+      "executableName": "sealchat",
+      "artifactName": "SealChat-${version}-${arch}.${ext}",
+      "extraResources": [
+        {
+          "from": "resources/tor/linux-x64",
+          "to": "tor/linux-x64"
+        }
+      ],
+      "desktop": {
+        "entry": {
+          "Name": "Seal Chat",
+          "GenericName": "Private Chat",
+          "Keywords": "chat;messenger;tor;pgp;encryption;"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "deb": {
+      "packageCategory": "net",
+      "priority": "optional",
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "libasound2 | libasound2t64"
+      ],
+      "recommends": [
+        "gnome-keyring | kwalletmanager"
+      ]
+    },
+    "appImage": {
+      "artifactName": "SealChat-${version}-x86_64.AppImage"
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.social-networking",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "minimumSystemVersion": "13.0",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Seal Chat uses the camera only when you ask it to scan a Seal Chat QR code.",
+        "NSMicrophoneUsageDescription": "Seal Chat does not use the microphone."
+      },
+      "extraResources": [
+        {
+          "from": "resources/tor/mac-${arch}",
+          "to": "tor/mac-${arch}"
+        }
+      ]
+    }
+  },
+  "desktopName": "sealchat.desktop"
+}

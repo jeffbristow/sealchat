@@ -1,0 +1,422 @@
+<!doctype html>
+<!-- =====================================================================
+  Seal Chat — index.html
+  Screens: App lock · Setup (new key / bring your own key / restore)
+           · Unlock key · Main (contacts + chat) · Settings
+  Pop-ups: Add contact · Contact details · generic dialog
+  Logic lives in app.js, styling in styles.css.
+====================================================================== -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- no remote anything: scripts, styles, images and connections stay local -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: scfile:; media-src scfile:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Seal Chat</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="emoji-font.css">   <!-- 1.6.1: colour emoji for Windows + Linux -->
+  <link rel="stylesheet" href="emoji-picker.css"> <!-- 1.6.1: emoji picker, :shortcodes, big emoji -->
+</head>
+<body>
+
+<!-- ============================ APP LOCK ============================== -->
+<section id="lockScreen" class="screen center hidden">
+  <div class="card narrow">
+    <img src="icon.png" class="hero-icon" alt="">
+    <h2>Seal Chat is locked</h2>
+    <p class="muted small">Messages keep arriving while locked.</p>
+    <input id="lockPin" type="password" inputmode="numeric" maxlength="12" placeholder="PIN" autocomplete="off">
+    <div class="error" id="lockErr"></div>
+    <button id="lockGo" class="btn primary wide">Unlock</button>
+    <button id="lockHello" class="btn wide hidden">Use Windows Hello</button>
+  </div>
+</section>
+
+<!-- ============================== SETUP =============================== -->
+<section id="setupScreen" class="screen center hidden">
+  <div class="card setup">
+    <!-- step: welcome -->
+    <div id="stWelcome">
+      <img src="icon.png" class="hero-icon" alt="">
+      <h1>Welcome to Seal Chat</h1>
+      <p class="muted">Private chat that goes straight from your PC to your contact's PC over Tor — no server in the middle. Every message is signed and encrypted with PGP.</p>
+      <div class="choices">
+        <button class="choice" data-step="stImport"><b>Use my own PGP key</b><span>Import a private key you already have (.asc)</span></button>
+        <button class="choice" data-step="stCreate"><b>Create a new key</b><span>Seal Chat makes a modern key for you</span></button>
+        <button class="choice" data-step="stRestore"><b>Restore a Seal Chat backup</b><span>Same ID and contacts as before</span></button>
+        <button class="choice" data-step="stLink"><b>Link to my Seal Chat on another device</b><span>Use the same ID here as well — contacts can reach you on either</span></button>
+      </div>
+    </div>
+
+    <!-- step: import -->
+    <div id="stImport" class="hidden">
+      <h2>Use my own PGP key</h2>
+      <p class="muted small">Paste your <b>private</b> key (starts with "-----BEGIN PGP PRIVATE KEY BLOCK-----") or choose the file. It stays on this PC, encrypted and locked to your Windows account.</p>
+      <textarea id="impKey" rows="7" class="mono" placeholder="-----BEGIN PGP PRIVATE KEY BLOCK-----" spellcheck="false"></textarea>
+      <div class="row gap"><button id="impFile" class="btn">Choose key file…</button><span id="impInfo" class="muted small"></span></div>
+      <label>Key passphrase<input id="impPass" type="password" autocomplete="off"></label>
+      <label>Name shown to your contacts<input id="impName" maxlength="80" placeholder="(from your key)"></label>
+      <label class="check"><input type="checkbox" id="impRemember" checked> Remember passphrase on this PC <span class="muted small">(needed to receive messages in the background)</span></label>
+      <div class="error" id="impErr"></div>
+      <div class="row gap"><button class="btn back">Back</button><span class="spacer"></span><button id="impGo" class="btn primary">Import key</button></div>
+    </div>
+
+    <!-- step: create -->
+    <div id="stCreate" class="hidden">
+      <h2>Create a new key</h2>
+      <label>Your name (shown to contacts)<input id="newName" maxlength="80" placeholder="e.g. Sam"></label>
+      <label>Passphrase (at least 8 characters)<input id="newPass" type="password" autocomplete="new-password"></label>
+      <label>Repeat passphrase<input id="newPass2" type="password" autocomplete="new-password"></label>
+      <label class="check"><input type="checkbox" id="newRemember" checked> Remember passphrase on this PC <span class="muted small">(needed to receive messages in the background)</span></label>
+      <div class="error" id="newErr"></div>
+      <div class="row gap"><button class="btn back">Back</button><span class="spacer"></span><button id="newGo" class="btn primary">Create key</button></div>
+    </div>
+
+    <!-- step: link (1.9.0) -->
+    <div id="stLink" class="hidden">
+      <h2>Link to my Seal Chat</h2>
+      <p class="muted small">On the computer where you already use Seal Chat, open <b>Settings → Your devices → Link a new device…</b> and type the code it shows here. This computer gets your key and its own address; your contacts and chats follow once it's online. Both computers must be online, and the code works for 10 minutes.</p>
+      <label>Link code<input id="lnkCode" class="mono" placeholder="link-482-crystal-orange-river-lemon" spellcheck="false" autocomplete="off"></label>
+      <label>Key passphrase <span class="muted small">(the same as on your other device)</span><input id="lnkPass" type="password" autocomplete="off"></label>
+      <label>Name for this device<input id="lnkName" maxlength="40" placeholder="e.g. Laptop"></label>
+      <label class="check"><input type="checkbox" id="lnkRemember" checked> Remember passphrase on this computer <span class="muted small">(needed to receive messages in the background)</span></label>
+      <div class="error" id="lnkErr"></div>
+      <div class="row gap"><button class="btn back">Back</button><span class="spacer"></span><button id="lnkGo" class="btn primary">Link</button></div>
+    </div>
+
+    <!-- step: restore -->
+    <div id="stRestore" class="hidden">
+      <h2>Restore a backup</h2>
+      <p class="muted small">Brings back your key, your Seal Chat ID, contacts and chats. Close Seal Chat on the old PC first — only one PC should use an ID at a time.</p>
+      <label>Backup password<input id="resPass" type="password" autocomplete="off"></label>
+      <div class="error" id="resErr"></div>
+      <div class="row gap"><button class="btn back">Back</button><span class="spacer"></span><button id="resGo" class="btn primary">Choose backup file…</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== UNLOCK KEY ============================= -->
+<section id="unlockScreen" class="screen center hidden">
+  <div class="card narrow">
+    <img src="icon.png" class="hero-icon" alt="">
+    <h2>Unlock your key</h2>
+    <p class="muted small">Seal Chat needs your PGP key passphrase to read and send messages.</p>
+    <input id="ukPass" type="password" placeholder="Key passphrase" autocomplete="off">
+    <label class="check"><input type="checkbox" id="ukRemember"> Remember on this PC</label>
+    <div class="error" id="ukErr"></div>
+    <button id="ukGo" class="btn primary wide">Unlock</button>
+  </div>
+</section>
+
+<!-- =============================== MAIN =============================== -->
+<section id="mainScreen" class="screen hidden">
+  <aside id="sidebar">
+    <div class="brand" id="brandHome" title="Home: your Seal Chat ID and QR code">
+      <img src="icon.png" class="brand-icon" alt="">
+      <span>Seal Chat</span>
+      <span class="spacer"></span>
+      <button id="btnSettings" class="icon-btn" title="Settings">⚙</button>
+    </div>
+    <button id="netPill" class="net-pill" title="Connection"><i class="dot"></i><span id="netText">Starting…</span></button>
+    <button id="btnAdd" class="btn primary add-btn">＋ Add contact</button>
+    <!-- 1.3.0: shown when a newer version is available -->
+    <button id="updBar" class="upd-bar hidden"><span>⬆</span><span id="updText">Update available</span></button>
+    <input id="search" class="search" placeholder="Search contacts" autocomplete="off">
+    <nav id="contactList" class="contact-list"></nav>
+    <button id="btnMyId" class="my-id" title="Show your Seal Chat ID and QR code"><span class="muted small">Your Seal Chat ID &amp; QR code ›</span><span id="myIdShort" class="mono small">…</span></button>
+  </aside>
+
+  <main id="pane">
+    <!-- nothing selected -->
+    <div id="emptyPane" class="empty-pane">
+      <img src="icon.png" class="hero-icon" alt="">
+      <h2>Your Seal Chat ID</h2>
+      <p class="muted">Send this to people you want to chat with. They add it with <b>＋ Add contact</b>.</p>
+      <!-- 1.2.0: QR code of your ID -->
+      <div id="qrBox" class="qr-box hidden"><img id="qrImg" alt="QR code of your Seal Chat ID"></div>
+      <div id="idBox" class="id-box mono selectable">Waiting for Tor…</div>
+      <div class="row gap center-row wrap"><button id="btnCopyId" class="btn primary">Copy my ID</button><button id="btnQrSave" class="btn">Save QR picture…</button><button id="btnQrCopy" class="btn">Copy QR picture</button></div>
+      <p class="muted small">Contacts can scan the QR code with their webcam in <b>＋ Add contact</b>, or open a picture of it.</p>
+      <p class="muted small" id="idFp"></p>
+      <p class="small hidden" id="idHandle"></p><!-- 1.8.0: your name@domain -->
+      <!-- 1.8.0: invite codes -->
+      <div class="invite-cta"><button id="btnInvite" class="btn">🎟 Make an invite code…</button><p class="muted small">A short code like <span class="mono">482-crystal-orange-river</span> you can read out or write down instead of sending the long ID.</p></div>
+    </div>
+
+    <!-- a conversation -->
+    <div id="chatPane" class="chat-pane hidden">
+      <header class="chat-head">
+        <div class="avatar" id="chAvatar"></div>
+        <div class="ch-title">
+          <div class="row gap"><b id="chName"></b><span id="chVerified" class="badge ok hidden" title="You compared safety numbers">✔ Verified</span></div>
+          <div id="chSub" class="muted small"></div>
+        </div>
+        <span class="spacer"></span>
+        <button id="chInfo" class="icon-btn" title="Contact details">ⓘ</button>
+        <button id="chMore" class="icon-btn" title="More">⋯</button>
+      </header>
+      <div id="chBanner" class="banner hidden"></div>
+      <div id="msgList" class="msg-list"></div>
+      <!-- 1.1.0: shown while files are dragged over the chat -->
+      <div id="dropZone" class="drop-zone hidden"><div>Drop to send — encrypted, straight to their PC</div></div>
+      <!-- 1.8.0: shown while replying to a message -->
+      <div id="replyBar" class="reply-bar hidden"></div>
+      <footer class="composer">
+        <button id="msgAttach" class="icon-btn attach" title="Send photos, videos, music or documents">📎</button>
+        <button id="msgEmoji" class="icon-btn attach emoji-btn" title="Emoji — or type : and a name, like :smile" aria-label="Emoji">😊</button>
+        <textarea id="msgInput" rows="1" placeholder="Write a message…" maxlength="10000"></textarea>
+        <button id="msgSend" class="btn primary" title="Send">Send</button>
+      </footer>
+    </div>
+  </main>
+</section>
+
+<!-- ============================= SETTINGS ============================= -->
+<section id="settingsScreen" class="screen hidden">
+  <div class="settings-wrap">
+    <div class="row gap"><button id="setBack" class="btn">← Back to chats</button><h2 class="grow">Settings</h2></div>
+
+    <div class="set-card">
+      <h3>You</h3>
+      <!-- 1.2.0: your picture -->
+      <div class="me-pic">
+        <div id="sAvatar" class="avatar big"></div>
+        <div class="grow">
+          <div class="row gap wrap"><button id="sPickAvatar" class="btn">Choose picture…</button><button id="sRemoveAvatar" class="btn">Remove</button></div>
+          <label class="check"><input type="checkbox" id="sShareAvatar"> Share my picture with my contacts <span class="muted small">(they can still pick their own picture for you)</span></label>
+        </div>
+      </div>
+      <label>Name shown to contacts<input id="sName" maxlength="80"></label>
+      <div class="kv"><span>Seal Chat ID</span><span id="sId" class="mono small selectable"></span></div>
+      <div class="kv"><span>Key fingerprint</span><span id="sFp" class="mono small selectable"></span></div>
+      <!-- 1.8.0: your name@domain -->
+      <label>Your name, if your website lists one <span class="muted small">(like ann@example.com — set it up on the Names panel of your Seal Chat Web setup page)</span>
+        <div class="row gap"><input id="sHandle" class="grow" maxlength="120" placeholder="ann@example.com" spellcheck="false"><button id="sHandleSave" class="btn">Check &amp; save</button></div></label>
+      <div id="sHandleMsg" class="muted small"></div>
+      <!-- 1.8.0: this installation's device (for using one ID on several devices later) -->
+      <div class="kv"><span>This device</span><span><span id="sDevice"></span> <a href="#" id="sDeviceRename" class="small">Rename</a></span></div>
+      <div class="row gap wrap">
+        <button id="sCopyId" class="btn">Copy my ID</button>
+        <button id="sCopyPub" class="btn">Copy my public key</button>
+        <button id="sExportPriv" class="btn">Export private key…</button>
+      </div>
+      <label class="check"><input type="checkbox" id="sRemember"> Remember key passphrase on this PC <span class="muted small">(off: you'll type it each time Seal Chat starts)</span></label>
+    </div>
+
+    <div class="set-card">
+      <h3>Privacy</h3>
+      <label class="check"><input type="checkbox" id="sReceipts"> Send read receipts <span class="muted small">(contacts see ✓✓ when you've read their message)</span></label>
+      <label class="check"><input type="checkbox" id="sRequests"> Allow contact requests from people with my ID</label>
+      <!-- 1.8.0 -->
+      <label class="check"><input type="checkbox" id="sMbDirect"> <span>If a website blocks Tor, contact it directly</span></label>
+      <p class="muted small set-hint">For contacts' mailboxes and name@domain lookups. That website then sees this PC's IP address. Off: such messages wait until you're both online, and such names can't be looked up.</p>
+    </div>
+
+    <div class="set-card">
+      <h3>Notifications</h3>
+      <label class="check"><input type="checkbox" id="sNotify"> Show notifications for new messages</label>
+      <label class="check"><input type="checkbox" id="sPreview"> Show message text in notifications</label>
+      <label class="check"><input type="checkbox" id="sSound"> Play a sound</label>
+    </div>
+
+    <div class="set-card">
+      <h3>App</h3>
+      <label class="check"><input type="checkbox" id="sEnter"> Enter sends the message (Shift+Enter for a new line)</label>
+      <label class="check"><input type="checkbox" id="sEmojiConvert"> Turn :) :D ;) &lt;3 into 🙂 😄 😉 ❤️ as I type <span class="muted small">(type : and a name for any emoji, e.g. :smile)</span></label>
+      <label class="check"><input type="checkbox" id="sTray"> Closing the window keeps Seal Chat running in the tray <span class="muted small">(so messages can reach you)</span></label>
+      <label class="check"><input type="checkbox" id="sStartup"> Start Seal Chat when I sign in to Windows</label>
+    </div>
+
+    <div class="set-card">
+      <h3>App lock</h3>
+      <p class="muted small" id="lkState"></p>
+      <div id="lkOff">
+        <div class="row gap wrap"><input id="lkPin" type="password" inputmode="numeric" maxlength="12" placeholder="New PIN (4–12 digits)"><input id="lkPin2" type="password" inputmode="numeric" maxlength="12" placeholder="Repeat PIN"><button id="lkOn" class="btn primary">Turn on</button></div>
+      </div>
+      <div id="lkOnBox" class="hidden">
+        <label class="check"><input type="checkbox" id="lkHello"> Allow Windows Hello (face / fingerprint / Windows PIN)</label>
+        <label>Lock after being idle for
+          <select id="lkIdle"><option value="0">Never</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select>
+        </label>
+        <div class="row gap wrap"><button id="lkNow" class="btn">Lock now</button><button id="lkChange" class="btn">Change PIN…</button><button id="lkOffBtn" class="btn danger">Turn off…</button></div>
+      </div>
+      <div class="error" id="lkErr"></div>
+    </div>
+
+    <!-- 1.9.0: your devices (one ID on several devices) -->
+    <div class="set-card" id="devCard">
+      <h3>Your devices</h3>
+      <p class="muted small">Use your Seal Chat ID on more than one computer. Each device has its own address, and contacts can reach you at any of them — it doesn't matter which one you gave them. Your devices pass messages, contacts and chats on to each other through Tor, sealed with your key. Contacts need Seal Chat 1.9 or newer to use your other addresses.</p>
+      <div id="dvList" class="web-devices"></div>
+      <div class="row gap wrap"><button id="dvLink" class="btn primary">Link a new device…</button></div>
+      <div class="error" id="dvErr"></div>
+    </div>
+
+    <!-- 1.8.5: mailbox (Cloudflare Worker + contact mailbox) -->
+    <div class="set-card" id="mbCard">
+      <h3>Mailbox</h3>
+      <p class="muted small">When you're offline, your contacts' messages can wait somewhere other than their own PC — so you get them even if they've gone offline too. Every message is sealed with PGP for you: nobody on the way can read it.</p>
+      <div class="sec-label">Your mailbox on Cloudflare (free)</div>
+      <div id="mbwNo">
+        <p class="muted small">A small Cloudflare Worker holds messages for you. Works even when your web host blocks Tor. One-time setup (about 5 minutes — see the help guide, "Mailbox on Cloudflare"):</p>
+        <ol class="muted small mbw-steps">
+          <li>Copy the Worker script (it's made for this PC) and paste it into a new Worker at dash.cloudflare.com.</li>
+          <li>Add a D1 database to the Worker with the variable name <b>DB</b>.</li>
+          <li>Paste the Worker's address here and press Connect.</li>
+        </ol>
+        <div class="row gap wrap"><button id="mbwCopy" class="btn">Copy Worker script</button></div>
+        <label>Worker address
+          <input id="mbwUrl" class="mono small" placeholder="https://sealchat-mailbox.yourname.workers.dev" spellcheck="false"></label>
+        <div class="row gap"><button id="mbwConnect" class="btn primary">Connect</button></div>
+      </div>
+      <div id="mbwYes" class="hidden">
+        <div class="kv"><span>Worker</span><span id="mbwSite" class="mono small selectable"></span></div>
+        <div class="kv"><span>Status</span><span id="mbwStatus"></span></div>
+        <div class="row gap wrap"><button id="mbwCheck" class="btn mini">Check now</button><button id="mbwCopy2" class="btn mini">Copy Worker script</button><button id="mbwRemove" class="btn mini danger">Stop using it…</button></div>
+      </div>
+      <div class="error" id="mbwErr"></div>
+      <div class="sec-label">Contact mailbox</div>
+      <label class="check"><input type="checkbox" id="sHold"> <span>Let contacts we both know pass messages on</span></label>
+      <p class="muted small set-hint">If a contact is offline and has no mailbox (or it can't be reached), a contact you both have who's online can hold the sealed message and pass it on when they meet. You do the same for your contacts. They can't read what they pass on. Needs Seal Chat 1.8.5 or newer. <span id="mbHolding"></span></p>
+    </div>
+
+    <!-- 1.4.0: web access (phone browser) -->
+    <div class="set-card" id="webCard">
+      <h3>Web access <span id="wBadge" class="badge">Off</span></h3>
+      <p class="muted small">Use Seal Chat from your phone's browser, through Seal Chat Web installed on your own website. This PC still does the work — your key never leaves it, and the website only passes on sealed messages. Off unless you turn it on.</p>
+      <div id="wNoLink">
+        <label>Connection link — from your Seal Chat Web setup page (admin.php)
+          <input id="wLink" class="mono small" placeholder="https://example.com/chat/#relay=XXXX-XXXX-XXXX-XXXX" spellcheck="false"></label>
+        <div class="row gap"><button id="wConnect" class="btn primary">Connect</button></div>
+      </div>
+      <div id="wLinked" class="hidden">
+        <div class="kv"><span>Web interface</span><span id="wSite" class="mono small selectable"></span></div>
+        <div class="kv"><span>Status</span><span id="wStatus"></span></div>
+        <div class="kv hidden" id="wSharedRow"><span>Your devices</span><span id="wShared" class="small"></span></div>
+        <div class="row gap wrap">
+          <button id="wToggle" class="btn primary">Turn on</button>
+          <select id="wFor" title="Turn off automatically"><option value="0">until I turn it off</option><option value="1">for 1 hour</option><option value="8">for 8 hours</option><option value="24">for 24 hours</option></select>
+        </div>
+        <label>While nobody uses the web interface, check for it every
+          <select id="wIdle"><option value="15">15 seconds</option><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="300">5 minutes</option></select>
+        </label>
+        <p class="muted small">Each check is one tiny "has anything changed?" request that your web server answers without running PHP (~1–2 KB). Opening the web interface can take up to this long to connect.</p>
+        <!-- 1.8.0: mailbox -->
+        <div class="sec-label">Mailbox</div>
+        <label class="check"><input type="checkbox" id="wMailbox"> <span>Let contacts leave messages on my website while this PC is off</span></label>
+        <p class="muted small">Sealed with PGP — the website can't read them or see who sent them. Needs Seal Chat 1.8.0+ on their side and Seal Chat Web 1.3.0+ on your website.</p>
+        <div class="row gap wrap"><span id="wMbStatus" class="muted small grow"></span><button id="wMbCheck" class="btn mini">Check now</button></div>
+        <div class="sec-label">Paired devices</div>
+        <div id="wDevices" class="web-devices"></div>
+        <div class="row gap wrap"><button id="wPair" class="btn">Pair a device…</button><button id="wDisconnect" class="btn danger">Disconnect from website…</button></div>
+      </div>
+      <!-- 1.4.1: shown before connecting too — your website does NOT need to be on Tor; this only hides this PC's IP address from it -->
+      <label class="check"><input type="checkbox" id="wTor"> Connect through Tor</label>
+      <p class="muted small">Hides this PC's IP address from your website (a little slower). Your website does not need to be on Tor — Tor reaches ordinary websites too — but some web hosts block visitors that arrive through Tor.</p>
+      <div class="error" id="wErr"></div>
+      <div id="wTorFix" class="row gap hidden"><button id="wDirect" class="btn">Connect directly instead</button><span class="muted small">Your website will see this PC's IP address.</span></div>
+    </div>
+    <div class="set-card">
+      <h3>Connection (Tor)</h3>
+      <div class="kv"><span>Status</span><span id="tStatus"></span></div>
+      <p class="muted small">If your network blocks Tor (some workplaces, hotels or countries), add bridges. Get bridge lines at <a href="#" data-ext="https://bridges.torproject.org/">bridges.torproject.org</a>. obfs4 bridges need Tor Browser installed — Seal Chat borrows its "lyrebird" helper.</p>
+      <textarea id="tBridges" rows="3" class="mono small" placeholder="obfs4 1.2.3.4:443 FINGERPRINT cert=… iat-mode=0" spellcheck="false"></textarea>
+      <div class="row gap wrap">
+        <input id="tLyre" class="grow mono small" placeholder="lyrebird.exe (found automatically if Tor Browser is installed)">
+        <button id="tLyrePick" class="btn">Browse…</button>
+      </div>
+      <div class="row gap wrap"><button id="tSave" class="btn primary">Save &amp; reconnect</button><button id="tRestart" class="btn">Reconnect</button><button id="tLog" class="btn">Show Tor log</button></div>
+      <pre id="tLogBox" class="log hidden selectable"></pre>
+      <div class="error" id="tErr"></div>
+    </div>
+
+    <div class="set-card">
+      <h3>Files</h3>
+      <label>Download files automatically when they are up to
+        <select id="fAuto"><option value="0">Never (always ask)</option><option value="5">5 MB</option><option value="25">25 MB</option><option value="100">100 MB</option><option value="500">500 MB</option><option value="4096">Any size</option></select>
+      </label>
+      <label>Largest file I can send
+        <select id="fMax"><option value="100">100 MB</option><option value="500">500 MB</option><option value="1024">1 GB</option><option value="2048">2 GB</option><option value="4096">4 GB</option></select>
+      </label>
+      <p class="muted small">Files travel over Tor, typically 0.5–3 MB per second: a photo takes seconds, a long video several minutes. Both PCs need Seal Chat running; a big file can arrive over several sessions.</p>
+      <div class="kv"><span>Stored files</span><span id="fUsage">…</span></div>
+      <p class="muted small">Sent and received files are kept encrypted in Seal Chat's folder. Removing them frees space; the messages stay ("File removed from this PC").</p>
+      <div class="row gap wrap"><button id="fFree30" class="btn">Remove files older than 30 days</button><button id="fFreeAll" class="btn danger">Remove all stored files…</button></div>
+    </div>
+
+    <div class="set-card">
+      <h3>Backup</h3>
+      <p class="muted small">A backup lets you move to a new PC and keep the same Seal Chat ID, contacts and chats. It is encrypted with a password you choose. Files you sent or received are not included (they can be large) — save the ones you want to keep.</p>
+      <div class="row gap wrap"><input id="bPass" type="password" placeholder="Backup password (8+ characters)"><input id="bPass2" type="password" placeholder="Repeat"><button id="bGo" class="btn primary">Save backup…</button></div>
+      <div class="error" id="bErr"></div>
+    </div>
+
+    <div class="set-card">
+      <h3>About &amp; updates</h3>
+      <div class="kv"><span>Version</span><span id="aVer"></span></div>
+      <div class="kv"><span>Data protection</span><span id="aProt"></span></div>
+      <!-- 1.3.0: automatic updates -->
+      <div class="kv"><span>Updates</span><span id="uStatus" class="muted">…</span></div>
+      <label class="check"><input type="checkbox" id="uAuto"> Check for updates automatically (once a day)</label>
+      <label class="check"><input type="checkbox" id="uTor"> Check and download through Tor <span class="muted small">(the website doesn't see your IP address)</span></label>
+      <div class="row gap wrap"><button id="uCheck" class="btn primary">Check for updates now</button><button id="aUpdate" class="btn">Install update file…</button></div>
+      <details class="adv"><summary class="muted small">Advanced: update address</summary>
+        <div class="row gap wrap"><input id="uUrl" class="grow mono small" placeholder="https://raw.githubusercontent.com/jeffbristow/sealchat-updates/main/update.json"><button id="uUrlSave" class="btn">Save</button></div>
+        <p class="muted small">Seal Chat only installs updates signed with the Seal Chat signing key, whatever address they come from.</p>
+      </details>
+    </div>
+
+    <div class="set-card danger-zone">
+      <h3>Reset</h3>
+      <p class="muted small">Deletes your key, Seal Chat ID, contacts and chats from this PC. Make a backup first if you want to keep them.</p>
+      <button id="rGo" class="btn danger">Reset Seal Chat…</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== POP-UPS ============================= -->
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h3 id="mTitle"></h3>
+    <div id="mBody"></div>
+    <div class="error" id="mErr"></div>
+    <div class="row gap"><span class="spacer"></span><button id="mCancel" class="btn">Cancel</button><button id="mOk" class="btn primary">OK</button></div>
+  </div>
+</div>
+
+<!-- 1.6.0: a new installation getting the latest version -->
+<div id="firstUpd" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="fuTitle">
+  <div class="modal-box first-upd">
+    <img src="icon.png" alt="" class="fu-logo">
+    <h3 id="fuTitle">Getting the latest version…</h3>
+    <p id="fuText" class="muted"></p>
+    <div class="pbar"><i id="fuFill"></i></div>
+    <p id="fuProg" class="muted small"></p>
+    <div class="row gap"><span class="spacer"></span><button id="fuSkip" class="btn">Not now</button><button id="fuGo" class="btn primary hidden">Restart now</button></div>
+  </div>
+</div>
+
+<div id="menu" class="menu hidden"></div>
+<div id="toast" class="toast hidden"></div>
+
+<!-- 1.1.0: full-size photo viewer -->
+<div id="viewer" class="viewer hidden">
+  <div class="viewer-bar"><span id="vName" class="grow"></span><button id="vSave" class="btn">Save as…</button><button id="vOpen" class="btn">Open</button><button id="vClose" class="btn">Close ✕</button></div>
+  <div class="viewer-img"><img id="vImg" alt=""></div>
+</div>
+
+<!-- 1.2.0: webcam QR scanner -->
+<div id="scanner" class="scanner hidden">
+  <div class="scan-box">
+    <h3>Scan a Seal Chat QR code</h3>
+    <div class="scan-view"><video id="scanVideo" playsinline muted></video><div class="scan-frame"></div></div>
+    <p id="scanMsg" class="muted small">Hold the QR code up to your camera.</p>
+    <div class="row gap"><select id="scanCam" class="grow"></select><button id="scanClose" class="btn">Cancel</button></div>
+  </div>
+</div>
+
+<script src="vendor/jsQR.js"></script>
+<script src="emoji-picker.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

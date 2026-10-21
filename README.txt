@@ -1,6 +1,291 @@
 =====================================================================
- SEAL CHAT 1.4.1 — private peer-to-peer chat over Tor, with PGP
+ SEAL CHAT 1.9.4 — private peer-to-peer chat over Tor, with PGP
 =====================================================================
+
+WHAT'S NEW IN 1.9.4   (an update file only)
+  • Fix (found by a developer testing the Android app): on the first
+    start, "Link to my Seal Chat on another device" showed an empty screen
+    (on the phone, back did nothing either). setupStep() in
+    src/renderer/app.js switched steps from a hard-coded list that was
+    missing the Link step added in 1.9.0. It now reads the steps from the
+    page, so a new step can't be left out again. Desktop and Android.
+  • New check: test/setup-steps-test.js runs the real setupStep() against
+    the real step list for every welcome button (npm test, test:node18).
+
+WHAT'S NEW IN 1.9.3   (an update file only · goes with Seal Chat Web 1.3.2)
+  • Web access (Seal Chat Web) is shared by your linked devices: the
+    website connection, the paired phones and the notification key go to
+    your other devices in the encrypted device sync, so your phone works
+    with whichever of them is running. Pair a phone once, on any device.
+  • With Seal Chat Web 1.3.2 the website lets only ONE of your devices
+    answer the phone at a time (a "lease"); the others wait on standby and
+    take over in about a minute if it is switched off or asleep. The phone
+    reconnects by itself. With an older Seal Chat Web, only the device that
+    connected it answers (Settings → Web access says so).
+  • Turning web access on/off, removing a phone, notification settings and
+    wrong PINs count on all your devices. Phone notifications come from the
+    device that received the message (not again from the others).
+  • Removing one of your devices gives the website a new computer key, so
+    the removed device can't use it; your phones stay paired.
+  • If two of your devices were each connected to a website before, one
+    connection is kept for all of them (the one with more phones, else the
+    older one); phones paired only with the other need pairing again.
+  • New test: npm run test:webshare (two devices, one phone, the real
+    Seal Chat Web files).
+
+WHAT'S NEW IN 1.9.2   (an update file only)
+  • Fix: Settings → Your devices → "Link a new device…" (and making or
+    using an invite code) failed on the desktop with "Digest method not
+    supported". A .onion address ends with a SHA3-256 checksum, and
+    Electron's crypto library has no SHA3. Seal Chat now computes SHA3-256
+    itself (src/main/sha3.js, checked against the FIPS 202 test values and
+    Node's own SHA3); the addresses are exactly the same as before.
+  • New check: npm run test:electron runs the engine tests inside
+    Electron's own runtime (plain Node.js has SHA3, which is why the tests
+    missed this). It runs before every update file is built.
+  • The Android fallback ranges for emoji / email checks now come from
+    Electron's Unicode (17.0), so phone and desktop treat emoji the same.
+
+WHAT'S NEW IN 1.9.1   (an update file only)
+  • Android: the Android app runs this same code, and now takes these same
+    signed update files (it unpacks the verified file and runs it; an update
+    can say it needs a newer Android app: update.json "android":
+    { "minShell": N }, or "android": false to keep it off phones).
+  • Android fix (found by a developer testing the first APK): the phone's
+    Node.js can't compile regular expressions with Unicode property escapes
+    (\p{…}), so Seal Chat crashed on start. The emoji check (peer.js) and
+    openpgp's email check now use noicu.js: the \p{…} pattern where it
+    works, the same character class as explicit ranges where it doesn't.
+    openpgp is patched after "npm install" (build/patch-openpgp.js) and
+    again by the phone for each update it installs.
+  • New release check (npm test, and before every update file is built):
+    test/noicu-test.js parses all Node-side code and fails on any \p{…}
+    regex literal, checks the fallbacks match, and runs openpgp and the
+    emoji check as they run on the phone.
+  • Nothing changes on Windows, macOS or Linux.
+
+WHAT'S NEW IN 1.9.0   (an update file only)
+  • Linked devices: use one Seal Chat ID on several computers (and, later,
+    the Android app). Each device has its own address; contacts can reach
+    you at any of them, so it doesn't matter which one you gave them.
+      - On the computer you already use: Settings → Your devices → "Link a
+        new device…" shows a one-time code (link-482-crystal-…, 10 minutes).
+      - On the new computer: the welcome screen → "Link to my Seal Chat on
+        another device", the code, your key passphrase and a name for it.
+    The new computer gets your key (still locked with your passphrase) over
+    Tor, protected by the code (SPAKE2, like invite codes; 3 wrong tries
+    close it). It makes its own address and device key.
+  • Your devices keep each other up to date, through Tor, sealed with your
+    own key: messages contacts send you, messages you send (each one is
+    sent by the device you wrote it on), read status, reactions, deleted
+    messages, contacts and requests, your name and picture, and the mailbox
+    address. A newly linked device gets all contacts and chats.
+  • Contacts on 1.9 try your other addresses when the one they know doesn't
+    answer. Contacts on older versions keep using the address they have.
+  • Settings → Your devices lists your devices, when each was last in touch
+    and how many updates wait for it; "Remove…" takes one off your ID
+    (contacts are told; messages it was still sending are sent from here).
+    A removed device still has your key — if one is lost or stolen, make a
+    new ID.
+  • Files you send stay on the device you sent them from; your other
+    devices show the message. Files you receive can be downloaded on each.
+
+WHAT'S NEW IN 1.8.6   (an update file only)
+  • Fix: Settings → Mailbox → "Copy Worker script" failed with "Failed to
+    execute 'writeText' on 'Clipboard': Write permission denied". Seal
+    Chat now copies the script itself, like its other Copy buttons.
+
+WHAT'S NEW IN 1.8.5   (an update file only)
+  • Mailbox on Cloudflare (free): a small Cloudflare Worker can be your
+    mailbox — for when your web host blocks or challenges visitors that
+    come through Tor (Tor traffic stops at Cloudflare and never reaches
+    your web host). Settings → Mailbox → "Copy Worker script", paste it
+    into a new Worker, add a D1 database named DB, paste the Worker's
+    address back and press Connect. The script is made for your PC (it
+    holds only a hash of a key that never leaves your PC). It speaks the
+    same language as Seal Chat Web's mailbox, so contacts on any Seal
+    Chat 1.8 can use it. Seal Chat Web is not needed for it.
+  • Contact mailbox (on by default): if a contact is offline and has no
+    mailbox (or it can't be reached), Seal Chat leaves the sealed message
+    with a contact you both have who's online, and they pass it on when
+    they meet. They can't read it, and a contact who doesn't know them
+    learns nothing (they're asked with a hash). You do the same for your
+    contacts. Settings → Mailbox → "Let contacts we both know pass
+    messages on". Needs Seal Chat 1.8.5 on the helper's side.
+  • 📬 now says who a message was left with.
+
+WHAT'S NEW IN 1.8.4   (an update file only)
+  • The Seal Chat forwarder (1.8.2–1.8.3) is removed. Websites that block
+    Tor are handled as before 1.8.2: the message waits until you're both
+    online, unless you allow Settings → Privacy → "If a website blocks
+    Tor, contact it directly". A website owner can also let Tor reach just
+    Seal Chat's two addresses (relay.php and /.well-known/sealchat.json).
+  • When a mailbox website answers with a web page instead of Seal Chat
+    Web's answer (for example a "Checking your browser" security check
+    for Tor visitors), the message now names that page.
+
+WHAT'S NEW IN 1.8.3   (an update file only)
+  • When a website blocks Tor and the Seal Chat forwarder can't get
+    through either, the message now says where it stopped: Cloudflare
+    turning the Tor request away, the forwarder refusing, or the website
+    refusing the forwarder too.
+  • Forwarder script v2 (build/forwarder-worker.js): marks answers that
+    come from the website, and has a /diag page for troubleshooting.
+
+WHAT'S NEW IN 1.8.2   (an update file only)
+  • Websites that block Tor: when a contact's mailbox website (or a
+    name@domain website) refuses visitors that come through Tor, Seal Chat
+    now tries again through the Seal Chat forwarder — a small Cloudflare
+    Worker — still through Tor:
+        Seal Chat ──Tor──▶ forwarder ──HTTPS──▶ the website
+    The website sees Cloudflare instead of Tor, so it lets the request in;
+    the forwarder sees a Tor exit, never you. Mailbox messages are sealed
+    with PGP before they leave, so neither can read them. The forwarder
+    only passes on mailbox drops and name lookups (build/forwarder-worker.js).
+    On by default; Settings → Privacy → "If a website blocks Tor, go
+    through the Seal Chat forwarder" turns it off. Contacting the website
+    directly stays the last resort, and only if you allow it.
+  • Clearer message when a website blocks Tor and nothing gets through.
+
+WHAT'S NEW IN 1.8.1   (an update file only)
+  • Mailbox fix: if a contact was still on an older Seal Chat when you
+    turned your mailbox on, 1.8.0 counted your mailbox address as "given"
+    and never sent it again — so after they updated, their Seal Chat
+    still didn't know you had a mailbox. 1.8.1 sends it again by itself
+    as soon as they're on 1.8, and once more to every contact after this
+    update.
+  • Settings → Web access → Mailbox now shows how many contacts know
+    about your mailbox ("3 of 5 contacts know about it").
+  • When a message can't be left in a contact's mailbox, the chat now
+    says why (for example, their website blocks visitors from Tor)
+    instead of only "will keep trying".
+
+WHAT'S NEW IN 1.8.0   (an update file only — the 1.7.0 installers stay)
+  • Invite codes: Home → "Make an invite code…" gives a short code like
+    482-crystal-orange-river to read out or write down. The other person
+    types it in ＋ Add contact. "482-crystal" picks a temporary .onion
+    address your Seal Chat publishes; the other words are a password that
+    never crosses the network (SPAKE2 on ristretto255). 3 wrong tries
+    close the code. Lifetimes 1 hour, 24 hours, 7 days or 30 days (one
+    more word). One person: you're both added at once. Several people:
+    each request waits for you, marked with the invite's label. Your
+    Seal Chat must be open for a code to work. Up to 5 open at once.
+  • Names: add people by name@domain (ann@example.com). Seal Chat reads
+    https://domain/.well-known/sealchat.json through Tor, shows the key
+    fingerprint, and remembers ("pins") the answer; once a day it checks
+    again and warns if the name now points to someone else (it never
+    switches by itself). Seal Chat Web 1.3.0: admin.php → Names writes
+    that file. Set your own name in Settings → You.
+  • Replies and reactions: hover a message (or right-click) for ↩ Reply
+    and 🙂 React; one reaction per person per message.
+  • Mailbox (with Seal Chat Web 1.3.0): Settings → Web access → Mailbox
+    lets contacts leave sealed messages on your website while this PC is
+    off. After a minute of not reaching you, their Seal Chat posts the
+    PGP-sealed message there through Tor (📬); yours picks it up when it
+    is back. The website can't read them or see who sent them; kept at
+    most 30 days. Settings → Privacy → "If a website blocks Tor, contact
+    it directly" (off by default).
+  • Groundwork for several devices per ID: every installation has its
+    own device key; your contacts receive a device list signed with your
+    PGP key, and messages say which device sent them. Nothing is sent to
+    more than one device yet.
+  • New libraries: @noble/curves (SPAKE2) and @scure/bip39 (word list).
+
+WHAT'S NEW IN 1.7.0   (new installers + update file)
+  • New installers for Windows, Linux, Mac and macOS 12: a new installation
+    gets its updates from GitHub from the first start.
+  • Files from your phone (with Seal Chat Web 1.2.0): 📎 next to the message
+    box sends photos, videos and files up to 100 MB. The phone passes them
+    to this computer in sealed 512 KB pieces through your website's relay;
+    Seal Chat then sends them to your contact over Tor like any file you
+    pick here (your "largest file" setting still applies).
+  • Files on your phone: photo previews in the chat; tap to open photos,
+    videos and music, or Save / Share any file (up to 100 MB). A file not
+    downloaded yet has a "Download" button — this computer fetches it from
+    your contact first.
+  • Files sent from this window now appear on a phone that has Seal Chat
+    Web open straight away, with their progress.
+  • Updates come from GitHub: Seal Chat 1.7.0 checks
+    raw.githubusercontent.com/jeffbristow/sealchat-updates for updates —
+    jeffbristow.com is no longer asked. That works through Tor even where
+    a web host blocks Tor visitors. Updates must still carry Seal Chat's
+    signature, so whoever controls the repository can't change what gets
+    installed. If you set your own update address, only that is asked.
+    Installed 1.3–1.6 copies still ask jeffbristow.com once, update to
+    1.7.0, and from then on use GitHub.
+  • For Seal Chat Web's "Update now": build/sign-web-update.js signs a
+    SealChat-Web-x.y.z.zip with the same (offline) key.
+
+WHAT'S NEW IN 1.6.1 — EMOJI   (an update file only; the 1.6.0 installers stay)
+  • 😊 button next to the message box: search, groups, "Recently used",
+    skin tone. One click picks (Shift-click to pick several); Esc closes.
+  • Type ":" and a name — :smile, :+1, :tada — to get suggestions; Tab or
+    Enter picks (Enter doesn't send while the list is open), and a full
+    ":tada:" turns into 🎉 by itself.
+  • Settings → App → "Turn :) :D ;) <3 into 🙂 😄 😉 ❤️ as I type" (off by
+    default; never inside a word or a link).
+  • Messages of just 1–3 emoji show big.
+  • Colour emoji on every Linux desktop and all emoji on Windows 10: Seal
+    Chat now brings Noto Color Emoji 2.047 (SIL Open Font License), in
+    parts that load only when needed. macOS keeps Apple's emoji.
+  • Emoji are ordinary text, so contacts on older versions see them too.
+  • Emoji list: emojibase-data (MIT), Emoji 15.0 and older.
+
+WHAT'S NEW IN 1.6.0
+  • Phone notifications (with Seal Chat Web 1.1.0): a paired phone can turn
+    on notifications (its menu ⋯ → Notifications). Seal Chat sends "New
+    message" — or "New message from Alice" if that device allows names —
+    never the message itself, encrypted for that phone's browser only,
+    through the phone maker's push service (Apple / Google / Mozilla),
+    through Tor when "Connect through Tor" is on. Nothing is sent while
+    the phone has Seal Chat open, or while web access is off. Each device
+    has its own switches in Settings → Web access. iPhone: Home Screen
+    version only (iOS 16.4+).
+  • Contacts from the phone: add (scan their QR code, a photo of it, or
+    paste the ID), "My Seal Chat ID" as a QR code, accept / decline
+    requests, rename, safety number + verified, mute, block, remove — the
+    same actions as this window, done here on your computer.
+  • "Install once, then update": the first time an installed copy starts,
+    it looks for an update as soon as it can reach the website (through
+    Tor once connected, or straight away if update checks go direct). A
+    newer signed update is downloaded, verified, and Seal Chat restarts
+    into it ("Updating to x.y.z…", with "Not now"). So the installers on
+    the website only need rebuilding when Electron or Tor change — a
+    .sealchat update file can't change those. Suggested: a new installer
+    every 2–3 months, or straight away for an important Electron (Chromium)
+    security fix or a Tor update.
+  • Mac: the regular Mac build needs macOS 13 Ventura or newer (Electron
+    44 does). Macs on macOS 12 Monterey use the separate "legacy" build
+    (Electron 43): make-sealchat-legacy-dmg.sh, SealChat-1.6.0-macOS12-…
+    It gets the same .sealchat updates. 1.5.0 said "macOS 12" by mistake;
+    on macOS 12 it now shows Apple's "requires macOS 13" message instead
+    of failing.
+
+WHAT'S NEW IN 1.5.0 — macOS
+  • Seal Chat for Mac: Apple Silicon (M1/M2/M3/M4…) and Intel, macOS 13 or
+    newer (1.5.0 said 12 — wrong; see 1.6.0). Same features, same Seal Chat
+    ID format, same update files.
+  • Mac details: a standard menu bar (⌘C/⌘V/⌘A/⌘Z work, ⌘, opens Settings,
+    ⌘Q quits), a seal icon in the menu bar, unread count on the dock icon,
+    "Start Seal Chat when I log in", data locked with your Mac's Keychain.
+  • Tor for Mac is built in (Tor 0.4.9.5, Apple Silicon and Intel builds).
+  • Windows/Linux: no changes besides the version number.
+
+MAC: MAKING THE .DMG (on any Mac, no Xcode or Apple account needed)
+  1. Put all the SealChat-1.6.0-mac-…tar.gz.N.part files and
+     make-sealchat-dmg.sh in one folder. (macOS 12: the
+     SealChat-1.6.0-legacy-mac-… parts and make-sealchat-legacy-dmg.sh.)
+  2. Terminal:  cd <that folder>   then   bash make-sealchat-dmg.sh
+  3. You get SealChat-1.6.0-arm64.dmg (Apple Silicon) and/or
+     SealChat-1.6.0-x64.dmg (Intel) — or SealChat-1.6.0-macOS12-….dmg. The script checks the parts, signs the
+     app "ad-hoc" (free; Apple Silicon needs at least that) and makes the
+     .dmg with an Applications shortcut.
+MAC: INSTALLING (unsigned app — one extra step the first time)
+  Open the .dmg, drag Seal Chat to Applications, open it. macOS says it
+  can't verify the developer → OK. Then System Settings → Privacy &
+  Security → "Open Anyway" next to Seal Chat → confirm. Only needed once.
+  Which one? Apple menu → About This Mac: "Chip: Apple M…" = arm64,
+  "Processor: Intel" = x64.
 
 WHAT'S NEW IN 1.4.1 — FIXES
   • "Through Tor" now really goes through Tor. In 1.3.0–1.4.0 a bug made
