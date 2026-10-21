@@ -1,6 +1,18 @@
 =====================================================================
- SEAL CHAT 1.9.5 — private peer-to-peer chat over Tor, with PGP
+ SEAL CHAT 1.9.6 — private peer-to-peer chat over Tor, with PGP
 =====================================================================
+
+WHAT'S NEW IN 1.9.6   (an update file only)
+  • Fix: with linked devices, the phone (Seal Chat Web) only worked with
+    the device that connected the website — another linked device (for
+    example the Android app) never answered it. A device learns what the
+    website can do (Seal Chat Web 1.3.2's "lease") only when it connects,
+    so a website connected before it was updated to 1.3.2 was taken to be
+    an older one forever. Now a device that shares the connection but has
+    no lease asks the website again every 10 minutes, and passes the
+    answer to your other devices. Desktop and Android.
+  • New check in npm run test:webshare: the website is updated to 1.3.2
+    after it was connected.
 
 WHAT'S NEW IN 1.9.5   (an update file only)
   • Fix (Android): a long message preview in the contact list made the

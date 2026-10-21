@@ -1,7 +1,7 @@
 {
   "name": "sealchat",
   "productName": "Seal Chat",
-  "version": "1.9.5",
+  "version": "1.9.6",
   "description": "Private peer-to-peer chat over Tor with OpenPGP encryption",
   "main": "src/main/bootstrap.js",
   "author": {

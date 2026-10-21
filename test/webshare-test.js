@@ -188,6 +188,12 @@ function computer(name, node, peers) {
     for (const x of [A, B, C]) x.vault.web.feat = [];
     ok(C.wa._serves() && !A.wa._serves() && !B.wa._serves(), 'only the device that connected it answers');
 
+    console.log('The website is updated to 1.3.2 later (1.9.6)');
+    B.wa.start();                                      // B didn't connect it — it has to ask the website itself
+    ok(await until(() => B.wa._leaseOk() && B.wa._serves(), 10000), 'B learns the website can hand out a lease and answers too');
+    ok(await until(() => (A.vault.web.feat || []).includes('lease'), 5000), 'A hears it by sync');
+    B.wa.stop();
+
     console.log('Turned off / removed');
     C.wa.setEnabled(false);
     await sleep(300);

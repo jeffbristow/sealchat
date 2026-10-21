@@ -74,6 +74,7 @@ const PUSH_GAP_MS = 10e3;          // at most one notification per device per 10
 const STANDBY_MS = 15e3;           // 1.9.3: while another of your devices answers the phone, ask again this often
 const SEQ_JUMP = 30e6;             // 1.9.3: taking over, number messages a bit (30 s worth) past the previous device's
 const GONE_KEEP = 90 * 86400e3;    // 1.9.3: "this phone was removed" is remembered this long (so a sync can't bring it back)
+const FEAT_RECHECK_MS = 10 * 60e3; // 1.9.6: shared but no lease: ask the website again this often (it may have been updated)
 
 /* =================================================================
  * 1. CRYPTO  (same as Seal Chat Web's crypto.js)
@@ -325,6 +326,12 @@ class WebAccess extends EventEmitter {
       if (this.viaTor() && !this.o.socksPort()) {
         if (this.mode !== 'waiting-tor') { this.mode = 'waiting-tor'; this._changed(); }
         await this._sleep(5000); continue;
+      }
+      if (this._shared() && !this._leaseOk() && Date.now() - (this._featAt || 0) > FEAT_RECHECK_MS) {
+        // 1.9.6: the website's features are only learned at "register" — if it was connected before
+        // Seal Chat Web 1.3.2 and updated since, ask again (otherwise only the device that connected it ever answers)
+        this._featAt = Date.now();
+        try { await this._register(); } catch (e) { this.emit('log', 'web access: feature check: ' + e.message); }
       }
       if (!this._serves()) {
         // 1.9.3: shared, but the website is older than Seal Chat Web 1.3.2: only the device that connected it answers
