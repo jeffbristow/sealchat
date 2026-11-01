@@ -1,6 +1,17 @@
 =====================================================================
- SEAL CHAT 1.9.6 — private peer-to-peer chat over Tor, with PGP
+ SEAL CHAT 1.9.7 — private peer-to-peer chat over Tor, with PGP
 =====================================================================
+
+WHAT'S NEW IN 1.9.7   (an update file only · and the new Ubuntu Touch app)
+  • New: Seal Chat for Ubuntu Touch (24.04, arm64) —
+    SealChat-1.9.7-ubuntu-touch-arm64.click. The same Seal Chat as the
+    desktop and Android (engine, screens, linking, update files), with its
+    own Tor; it stays online in the background and starts with the phone.
+    Source: jeffbristow/sealchat-ubuntu-touch.
+  • update.json can say which Ubuntu Touch apps an update is for, like
+    Android's entry:  "ubuntutouch": { "minShell": N }  or
+    "ubuntutouch": false. Older phone apps are told to install the new
+    click first. (test/android-update-test.js checks both.)
 
 WHAT'S NEW IN 1.9.6   (an update file only)
   • Fix: with linked devices, the phone (Seal Chat Web) only worked with

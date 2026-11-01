@@ -36,6 +36,23 @@ const srv = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type': 'ap
   s = await up().check();
   ok(s.available && !s.available.needsApk, 'desktop: "android": false makes no difference');
 
+  // 1.9.7: Seal Chat for Ubuntu Touch reads its own "ubuntutouch" entry
+  process.env.SEALCHAT_UT_SHELL = '1';
+  info = { ...base, android: false };
+  s = await up().check();
+  ok(s.available && !s.available.needsApk, 'Ubuntu Touch: "android": false makes no difference');
+  info = { ...base, ubuntutouch: { minShell: 2 } };
+  const u2 = up(); s = await u2.check();
+  ok(s.available && s.available.needsApk && s.available.phoneApp === 'ubuntutouch', 'Ubuntu Touch, minShell 2: shown, marked "needs the new click"');
+  e = null; try { await u2.downloadAndInstall(); } catch (x) { e = x; }
+  ok(e && /needs a newer Ubuntu Touch app/.test(e.message), '…and it is not installed: "' + (e && e.message) + '"');
+  info = { ...base, ubuntutouch: false };
+  s = await up().check();
+  ok(!s.available, 'Ubuntu Touch, "ubuntutouch": false: not offered');
+  delete process.env.SEALCHAT_UT_SHELL;
+  s = await up().check();
+  ok(s.available, 'desktop: "ubuntutouch": false makes no difference');
+
   srv.close();
   console.log(`\n${passed} passed`);
 })().catch(e => { console.error('FAILED:', e.message); process.exit(1); });

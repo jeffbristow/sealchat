@@ -13,6 +13,7 @@ Private chat that goes straight from your PC to your contact's PC over Tor — n
 | macOS 12 | `SealChat-<version>-macOS12-arm64.dmg` / `SealChat-<version>-macOS12-x64.dmg` |
 | Linux | `SealChat-<version>-x86_64.AppImage` / `SealChat-<version>-amd64.deb` |
 | Android | `SealChat-<version>.apk` |
+| Ubuntu Touch 24.04 (arm64) | `SealChat-<version>-ubuntu-touch-arm64.click` |
 | Seal Chat Web (your own website) | `SealChat-Web-<version>.zip` |
 
 Installed apps update themselves from signed `.sealchat` update files, so an installer older than the newest version is fine: it updates on first start. Update files are published to [jeffbristow/sealchat-updates](https://github.com/jeffbristow/sealchat-updates).

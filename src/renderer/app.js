@@ -1189,7 +1189,7 @@ function openUpdate() {
   if (st && st.ready) return modal({ title: 'Update ready', html: `<p>Seal Chat ${esc(st.ready)} is downloaded and checked. Restart now to use it?</p>`, ok: 'Restart now', cancel: 'Later', onOk: () => call('app:restart') });
   if (!a) return;
   // 1.9.0 Android: this update needs a newer Android app (APK) first
-  if (a.needsApk) return modal({ title: `Seal Chat ${a.version} is available`, html: `<p>This update needs a newer Seal Chat Android app. Install the new Seal Chat APK — your ID, contacts and chats stay — and it updates from there.</p>${a.notes.length ? '<h3>What\'s new</h3><ul class="upd-notes">' + a.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>' : ''}`, ok: 'OK', cancel: 'Close' });
+  if (a.needsApk) return modal({ title: `Seal Chat ${a.version} is available`, html: `<p>${a.phoneApp === 'ubuntutouch' ? 'This update needs a newer Seal Chat for Ubuntu Touch. Install the new Seal Chat click' : 'This update needs a newer Seal Chat Android app. Install the new Seal Chat APK'} — your ID, contacts and chats stay — and it updates from there.</p>${a.notes.length ? '<h3>What\'s new</h3><ul class="upd-notes">' + a.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>' : ''}`, ok: 'OK', cancel: 'Close' });
   modal({
     title: `Seal Chat ${a.version} is available`,
     html: `<p class="muted small">You have ${esc(st.current)}.${a.released ? ' Released ' + esc(a.released) + '.' : ''}${a.size ? ' Download: ' + esc(a.size) + '.' : ''}</p>

@@ -34,6 +34,8 @@
  *                                  older phones are told to install the new APK
  *   "android": false               not for phones at all
  * With no "android" entry an update is for phones too.
+ * 1.9.7: Seal Chat for Ubuntu Touch (SEALCHAT_UT_SHELL) reads its own entry
+ * the same way: "ubuntutouch": { "minShell": N } or "ubuntutouch": false.
  *
  * Sections:
  *   1. Signing key + version compare
@@ -202,8 +204,10 @@ class Updater {
       if (!/^\d+(\.\d+){1,3}$/.test(v) || !info.url) { this.state.available = null; return this.state; }
       const url = new URL(String(info.url), src).toString();
       // 1.9.0: the Android app — is this update for phones, and for this Android app?
-      const shell = Number(process.env.SEALCHAT_ANDROID_SHELL || 0);
-      const andr = info.android;
+      // 1.9.7: Seal Chat for Ubuntu Touch the same way, with its own "ubuntutouch" entry
+      const ut = !!process.env.SEALCHAT_UT_SHELL;
+      const shell = Number((ut ? process.env.SEALCHAT_UT_SHELL : process.env.SEALCHAT_ANDROID_SHELL) || 0);
+      const andr = ut ? info.ubuntutouch : info.android;
       if (shell && (andr === false || (andr && andr.skip))) { this.state.available = null; return this.state; }
       const needsApk = !!(shell && andr && Number(andr.minShell) > shell);
       if (cmpVersion(v, this.o.currentVersion) > 0) {
@@ -215,7 +219,8 @@ class Updater {
           released: String(info.released || '').slice(0, 20),
           skipped: this.o.settings().skipVersion === v,
           from: src,                                      // 1.7.0: which source said so
-          needsApk                                        // 1.9.0: Android — this update needs a newer Android app first
+          needsApk,                                       // 1.9.0: Android — this update needs a newer Android app first
+          phoneApp: ut ? 'ubuntutouch' : 'android'        // 1.9.7: which phone app needsApk is about
         };
       } else this.state.available = null;
       return this.state;
@@ -232,6 +237,7 @@ class Updater {
   async downloadAndInstall(onProgress) {
     const a = this.state.available;
     if (!a) throw new Error('No update available');
+    if (a.needsApk && a.phoneApp === 'ubuntutouch') throw new Error(`Seal Chat ${a.version} needs a newer Ubuntu Touch app. Install the new Seal Chat click first — your chats and contacts stay.`);
     if (a.needsApk) throw new Error(`Seal Chat ${a.version} needs a newer Android app. Install the new Seal Chat APK first — your chats and contacts stay.`);
     if (this.state.downloading) throw new Error('Already downloading');
     // 1.7.0: if the file can't be fetched from where the check pointed, try the same version from the other sources
