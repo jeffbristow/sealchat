@@ -266,3 +266,16 @@ body.os-win32, body.os-linux { --font: "Segoe UI Variable Text", "Segoe UI", sys
 @media (max-width: 560px) { .fields-row { grid-template-columns: 1fr; } }
 .set-hint { margin: -4px 0 10px 30px; }
 .mbw-steps { margin: 4px 0 10px 18px; padding: 0; } .mbw-steps li { margin: 2px 0; }   /* 1.8.5 */
+
+/* 1.11.0: Seal ID at a glance — contact list mark + chat header pill */
+.contact .sid-mark { flex: none; width: 15px; height: 15px; align-self: center; }
+.contact .sid-mark.warn { width: auto; height: auto; color: var(--amber); font-size: 12px; }
+.sid-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; line-height: 1.4; font-family: inherit; padding: 1px 8px 1px 5px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; background: var(--bg-4); color: var(--text-2); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sid-pill img { width: 14px; height: 14px; flex: none; }
+.sid-pill.ok { background: #143a2a; color: var(--accent); }
+.sid-pill.warn { background: #3a3014; color: var(--amber); padding-left: 8px; }
+.sid-pill.bad, .sid-pill.checking { padding-left: 8px; }
+.sid-pill:hover { border-color: currentColor; }
+.sid-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#cdSealId.flash { animation: sidFlash 1.5s ease-out; border-radius: 8px; }
+@keyframes sidFlash { 0% { background: rgba(60, 207, 145, .22); } 100% { background: transparent; } }

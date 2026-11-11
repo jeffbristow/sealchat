@@ -1540,8 +1540,20 @@ function webContacts() {
     avatar: smallAvatar(avatarOf(c)),
     unread: c.unread || 0, lastAt: c.lastAt || c.addedAt || 0, lastText: c.lastText || '', lastDir: c.lastDir || '',
     online: !!(peer && peer.links.has(c.id)) || !!(c.lastSeen && Date.now() - c.lastSeen < 5 * 60e3 && !c.lastError),
-    lastSeen: c.lastSeen || 0
+    lastSeen: c.lastSeen || 0,
+    sealid: webSealId(c)                                                     // 1.11.0: Seal Chat Web 1.4.0 shows it
   }));
+}
+
+/** 1.11.0: a contact's Seal ID for Seal Chat Web — what THIS computer checked (the phone never checks by itself). */
+function webSealId(c) {
+  const s = sealidView(c);
+  if (!s) return null;
+  return {
+    url: s.url, ok: s.ok, how: s.how, name: s.name || '', why: s.why || null, warning: s.warning || null, error: s.error || null,
+    checked: s.checked || 0, aliases: (s.aliases || []).slice(0, 10),
+    proofs: (s.proofs || []).slice(0, 20).map(p => ({ service: p.service, handle: p.handle, status: p.status }))
+  };
 }
 
 /** A message as the web interface sees it (no file keys; the preview is asked for separately). */

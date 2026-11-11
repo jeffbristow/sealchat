@@ -1,7 +1,7 @@
 {
   "name": "sealchat",
   "productName": "Seal Chat",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Private peer-to-peer chat over Tor with OpenPGP encryption",
   "main": "src/main/bootstrap.js",
   "author": {
@@ -23,7 +23,9 @@
     "test:worker": "node test/worker-test.js",
     "test:node18": "npx -y node@18.20.4 test/core-test.js && npx -y node@18.20.4 test/replies-test.js && npx -y node@18.20.4 test/devices-test.js && npx -y node@18.20.4 test/holds-test.js && npx -y node@18.20.4 test/invites-test.js && npx -y node@18.20.4 test/linking-test.js && npx -y node@18.20.4 test/names-test.js && npx -y node@18.20.4 test/sealid-test.js && npx -y node@18.20.4 test/update-test.js && npx -y node@18.20.4 test/android-update-test.js && npx -y node@18.20.4 test/noicu-test.js && npx -y node@18.20.4 test/setup-steps-test.js",
     "postinstall": "node build/patch-openpgp.js",
-    "test:electron": "node build/test-in-electron.js"
+    "test:electron": "node build/test-in-electron.js",
+    "test:sealid-ui": "node test/sealid-ui-test.mjs",
+    "test:web-sealid": "node test/web-sealid-ui-test.mjs"
   },
   "dependencies": {
     "@noble/curves": "^1.9.7",

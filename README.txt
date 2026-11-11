@@ -1,6 +1,26 @@
 =====================================================================
- SEAL CHAT 1.10.0 — private peer-to-peer chat over Tor, with PGP
+ SEAL CHAT 1.11.0 — private peer-to-peer chat over Tor, with PGP
 =====================================================================
+
+WHAT'S NEW IN 1.11.0   (an update file only)
+  • A contact's Seal ID now shows where you chat, not only in their
+    contact details:
+      - the contact list has a small Seal ID mark next to their name
+        when their Seal ID proves them, or ⚠ if it was replaced;
+      - the chat header has a Seal ID pill next to "✔ Verified": their
+        Seal ID's address when it proves them, "Seal ID changed",
+        "Seal ID not proven" or "checking…". Hover for what it proves
+        (GitHub, X, domains …); click it for the details.
+      - a replaced Seal ID also puts a warning banner in the chat.
+  • "Verified" still means you compared safety numbers; a Seal ID is a
+    separate proof and never marks a contact as verified by itself.
+  • Seal Chat Web 1.4.0 shows them on your phone too: the mark in the
+    chat list, the Seal ID next to their name in a chat, and a Seal ID
+    section on the contact page. The phone shows what THIS computer
+    checked (it never checks a Seal ID itself); trusting a replaced Seal
+    ID is done here. Update Seal Chat Web from its admin.php → Updates.
+  • New tests: test/sealid-ui-test.mjs (npm run test:sealid-ui) and
+    test/web-sealid-ui-test.mjs (npm run test:web-sealid).
 
 WHAT'S NEW IN 1.10.0   (an update file only)
   • New: Seal ID. A Seal ID (github.com/jeffbristow/SealID) is a

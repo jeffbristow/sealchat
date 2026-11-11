@@ -332,9 +332,13 @@ function contactRow(c, override) {
     else last = (c.lastDir === 'out' ? 'You: ' : '') + (c.lastText || '');
     if (c.queued && c.status === 'accepted') last = `⏱ ${c.queued} waiting · ` + last;
   }
+  const sid = sidState(c);                                                  // 1.11.0: Seal ID mark
+  const mark = !sid || sid.kind === 'checking' || sid.kind === 'bad' ? ''
+    : sid.kind === 'ok' ? `<img class="sid-mark" src="sealid.svg" alt="Seal ID" title="${esc(sid.title)}">`
+    : `<span class="sid-mark warn" title="${esc(sid.title)}">⚠</span>`;
   return `<div class="contact ${c.id === currentId ? 'active' : ''} ${c.status === 'pending-in' ? 'request' : ''}" data-id="${c.id}">
     ${avatarHtml(c)}
-    <div class="meta"><div class="top"><span class="nm">${esc(c.name)}</span><span class="when">${shortWhen(c.lastAt)}</span></div>
+    <div class="meta"><div class="top"><span class="nm">${esc(c.name)}</span>${mark}<span class="when">${shortWhen(c.lastAt)}</span></div>
     <div class="row gap"><span class="last grow">${esc(last)}</span>${c.unread ? `<span class="unread">${c.unread}</span>` : ''}</div></div></div>`;
 }
 
@@ -376,6 +380,14 @@ function renderChatHead(c) {
   $('chAvatar').outerHTML = avatarHtml(c).replace('class="avatar ', 'id="chAvatar" class="avatar ');
   $('chName').textContent = c.name;
   $('chVerified').classList.toggle('hidden', !c.verified);
+  const sid = sidState(c);                                                  // 1.11.0: Seal ID in the header
+  const pill = $('chSealId');
+  pill.classList.toggle('hidden', !sid);
+  if (sid) {
+    pill.className = 'sid-pill ' + sid.kind;
+    pill.title = sid.title + ' Click for details.';
+    pill.innerHTML = (sid.kind === 'ok' ? '<img src="sealid.svg" alt="">' : sid.kind === 'warn' ? '⚠ ' : '') + esc(sid.label);
+  }
   let sub;
   if (c.linked) sub = 'Online — connected';
   else if (c.lastSeen && Date.now() - c.lastSeen < 5 * 60e3 && !c.lastError) sub = 'Online';
@@ -400,6 +412,8 @@ function renderChatHead(c) {
     set('bad', `<span class="grow">You blocked this contact. Their messages are refused.</span><button class="btn" data-act="unblock">Unblock</button>`);
   } else if (c.handleWarning) {                                       // 1.8.0
     set('bad', `<span class="grow">⚠ ${esc(c.handleWarning)}</span>`);
+  } else if (sid && sid.kind === 'warn') {                            // 1.11.0: their Seal ID was replaced
+    set('bad', `<span class="grow">⚠ ${esc(c.name)}'s Seal ID ${esc(sidHost(c.sealid.url))} changed in a way that doesn't continue what this PC saw before. Check with them another way before you trust it.</span><button class="btn" data-act="sealid">Details</button>`);
   } else if (c.queued && c.lastError) {
     set('', `<span class="grow">⏱ ${c.queued} message${c.queued > 1 ? 's' : ''} waiting: ${esc(c.lastError)}. They'll be sent automatically when ${esc(c.name)} is online.</span><button class="btn" data-act="retry">Try now</button>`);
   }
@@ -418,6 +432,7 @@ $('chBanner').onclick = async e => {
     if (act === 'unblock') { await call('contacts:unblock', id); }
     if (act === 'retry') { await call('contacts:retry', id); toast('Trying now…'); }
     if (act === 'remove') { await call('contacts:remove', id); closeChat(); }
+    if (act === 'sealid') return openSealIdDetails(id);
     refreshContacts();
   } catch (err) { toast(err.message, true); }
 };
@@ -1010,6 +1025,35 @@ async function contactDetails(id) {
   if ($('cdKey')) $('cdKey').onclick = () => call('contacts:exportKey', id).then(p => p && toast('Saved'));
   wireSealId(id);                                                         // 1.10.0
 }
+
+/* 1.11.0: a contact's Seal ID at a glance (contact list + chat header).
+ *   ok        their Seal ID proves this Seal Chat ID
+ *   warn      it was replaced (doesn't continue what this PC saw before)
+ *   bad       checked, but it doesn't prove this Seal Chat ID (or can't be reached)
+ *   checking  not checked yet */
+const sidHost = u => { try { return new URL(u).host; } catch { return u || ''; } };
+function sidState(c) {
+  const s = c && c.sealid;
+  if (!s) return null;
+  const host = sidHost(s.url);
+  if (s.warning) return { kind: 'warn', label: 'Seal ID changed', title: `${c.name}'s Seal ID ${host} changed: ${s.warning}` };
+  if (s.ok) {
+    const also = (s.proofs || []).filter(p => p.status === 'verified' || p.status === 'witnessed' || p.status === 'ok')
+      .map(p => (SID_LABELS[p.service] || p.service) + ' ' + p.handle);
+    return { kind: 'ok', label: host,
+      title: `Seal ID ${s.url} proves this is ${s.name || c.name}` + (s.how === 'same-key' ? ' (signed with the same key as their Seal Chat).' : ' (their Seal Chat key signed it).')
+        + (also.length ? ' Also proven there: ' + also.slice(0, 6).join(', ') + (also.length > 6 ? ', …' : '') + '.' : '')
+        + (s.checked ? ' Checked ' + ago(s.checked) + '.' : '') };
+  }
+  if (s.checked || s.error) return { kind: 'bad', label: 'Seal ID not proven', title: `${host}: ` + (s.why || s.error || 'it does not prove this Seal Chat ID.') };
+  return { kind: 'checking', label: 'Seal ID · checking…', title: `Checking ${host} through Tor.` };
+}
+async function openSealIdDetails(id) {
+  await contactDetails(id);
+  const box = $('cdSealId');
+  if (box) { box.scrollIntoView({ block: 'center' }); box.classList.add('flash'); setTimeout(() => box.classList.remove('flash'), 1600); }
+}
+$('chSealId').onclick = () => { if (currentId) openSealIdDetails(currentId); };
 
 /* 1.10.0: a contact's Seal ID, as checked by this PC through Tor */
 const SID_LABELS = { web: 'Website', dns: 'Domain', github: 'GitHub', x: 'X', mastodon: 'Mastodon', bluesky: 'Bluesky', hackernews: 'Hacker News', reddit: 'Reddit', youtube: 'YouTube', facebook: 'Facebook' };
