@@ -1,7 +1,7 @@
 {
   "name": "sealchat",
   "productName": "Seal Chat",
-  "version": "1.9.7",
+  "version": "1.10.0",
   "description": "Private peer-to-peer chat over Tor with OpenPGP encryption",
   "main": "src/main/bootstrap.js",
   "author": {
@@ -12,7 +12,7 @@
   "homepage": "https://jeffbristow.com/mysite/SealPost/",
   "scripts": {
     "start": "electron .",
-    "test": "node test/core-test.js && node test/clock-test.js && node test/files-test.js && node test/webfiles-test.js && node test/replies-test.js && node test/devices-test.js && node test/mailbox-test.js && node test/holds-test.js && node test/names-test.js && node test/invites-test.js && node test/linking-test.js && node test/qr-test.js && node test/update-test.js && node test/android-update-test.js && node test/noicu-test.js && node test/sha3-test.js && node test/setup-steps-test.js && node test/tor-route-test.js",
+    "test": "node test/core-test.js && node test/clock-test.js && node test/files-test.js && node test/webfiles-test.js && node test/replies-test.js && node test/devices-test.js && node test/mailbox-test.js && node test/holds-test.js && node test/names-test.js && node test/sealid-test.js && node test/invites-test.js && node test/linking-test.js && node test/qr-test.js && node test/update-test.js && node test/android-update-test.js && node test/noicu-test.js && node test/sha3-test.js && node test/setup-steps-test.js && node test/tor-route-test.js",
     "test:tor": "node test/tor-test.js",
     "test:web": "node test/web-test.js",
     "test:webshare": "node test/webshare-test.js",
@@ -21,7 +21,7 @@
     "dist:linux": "electron-builder --linux AppImage deb --x64 --publish never",
     "dist:mac": "electron-builder --mac dir --x64 --arm64 --publish never",
     "test:worker": "node test/worker-test.js",
-    "test:node18": "npx -y node@18.20.4 test/core-test.js && npx -y node@18.20.4 test/replies-test.js && npx -y node@18.20.4 test/devices-test.js && npx -y node@18.20.4 test/holds-test.js && npx -y node@18.20.4 test/invites-test.js && npx -y node@18.20.4 test/linking-test.js && npx -y node@18.20.4 test/names-test.js && npx -y node@18.20.4 test/update-test.js && npx -y node@18.20.4 test/android-update-test.js && npx -y node@18.20.4 test/noicu-test.js && npx -y node@18.20.4 test/setup-steps-test.js",
+    "test:node18": "npx -y node@18.20.4 test/core-test.js && npx -y node@18.20.4 test/replies-test.js && npx -y node@18.20.4 test/devices-test.js && npx -y node@18.20.4 test/holds-test.js && npx -y node@18.20.4 test/invites-test.js && npx -y node@18.20.4 test/linking-test.js && npx -y node@18.20.4 test/names-test.js && npx -y node@18.20.4 test/sealid-test.js && npx -y node@18.20.4 test/update-test.js && npx -y node@18.20.4 test/android-update-test.js && npx -y node@18.20.4 test/noicu-test.js && npx -y node@18.20.4 test/setup-steps-test.js",
     "postinstall": "node build/patch-openpgp.js",
     "test:electron": "node build/test-in-electron.js"
   },

@@ -193,6 +193,10 @@
       <label>Your name, if your website lists one <span class="muted small">(like ann@example.com — set it up on the Names panel of your Seal Chat Web setup page)</span>
         <div class="row gap"><input id="sHandle" class="grow" maxlength="120" placeholder="ann@example.com" spellcheck="false"><button id="sHandleSave" class="btn">Check &amp; save</button></div></label>
       <div id="sHandleMsg" class="muted small"></div>
+      <!-- 1.10.0: your Seal ID (a self-hosted identity page that proves your websites and accounts) -->
+      <label>Your Seal ID <span class="muted small">(like id.example.com, or a domain you proved there — your contacts can then see which websites and accounts are yours. <a href="#" data-ext="https://github.com/jeffbristow/SealID">What's Seal ID?</a>)</span>
+        <div class="row gap"><input id="sSealId" class="grow" maxlength="200" placeholder="id.example.com" spellcheck="false"><button id="sSealIdSave" class="btn">Check &amp; save</button></div></label>
+      <div id="sSealIdMsg" class="muted small"></div>
       <!-- 1.8.0: this installation's device (for using one ID on several devices later) -->
       <div class="kv"><span>This device</span><span><span id="sDevice"></span> <a href="#" id="sDeviceRename" class="small">Rename</a></span></div>
       <div class="row gap wrap">
@@ -209,7 +213,7 @@
       <label class="check"><input type="checkbox" id="sRequests"> Allow contact requests from people with my ID</label>
       <!-- 1.8.0 -->
       <label class="check"><input type="checkbox" id="sMbDirect"> <span>If a website blocks Tor, contact it directly</span></label>
-      <p class="muted small set-hint">For contacts' mailboxes and name@domain lookups. That website then sees this PC's IP address. Off: such messages wait until you're both online, and such names can't be looked up.</p>
+      <p class="muted small set-hint">For contacts' mailboxes, name@domain lookups and Seal IDs. That website then sees this PC's IP address. Off: such messages wait until you're both online, and such names and Seal IDs can't be looked up.</p>
     </div>
 
     <div class="set-card">

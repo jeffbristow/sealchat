@@ -804,8 +804,8 @@ function renameContact(c) {
 $('btnAdd').onclick = () => {
   modal({
     title: 'Add contact',
-    html: `<p class="muted small">Paste the Seal Chat ID they sent you (<span class="mono">sealchat:abc…xyz:1A2B…</span>), type their name if they have one, like <span class="mono">ann@example.com</span>, or the invite code they gave you, like <span class="mono">482-crystal-orange-river</span>.</p>
-      <textarea id="acId" rows="3" class="mono small" spellcheck="false" placeholder="sealchat:…   or   ann@example.com   or   482-crystal-orange-river"></textarea>
+    html: `<p class="muted small">Paste the Seal Chat ID they sent you (<span class="mono">sealchat:abc…xyz:1A2B…</span>), type their name if they have one, like <span class="mono">ann@example.com</span>, their Seal ID or a domain proven there, like <span class="mono">id.example.com</span>, or the invite code they gave you, like <span class="mono">482-crystal-orange-river</span>.</p>
+      <textarea id="acId" rows="3" class="mono small" spellcheck="false" placeholder="sealchat:…   or   ann@example.com   or   id.example.com   or   482-crystal-orange-river"></textarea>
       <div class="row gap wrap qr-actions"><span class="muted small">Or use their QR code:</span><button class="btn mini" id="acScan">📷 Scan with camera</button><button class="btn mini" id="acQrFile">Open QR picture…</button><button class="btn mini" id="acQrPaste">Paste QR picture</button></div>
       <div id="acCheck" class="small muted"></div>
       <label>Name on this PC (optional)<input id="acNick" maxlength="80" placeholder="e.g. Ann"></label>
@@ -845,6 +845,19 @@ $('btnAdd').onclick = () => {
           : `<span style="color:var(--amber)">${esc(r.error)}</span>`;
         if (r.ok && r.data.display && !$('acNick').value) $('acNick').placeholder = r.data.display;
       }, 600);
+      return;
+    }
+    if (!/^sealchat:/i.test(v) && /^(https?:\/\/)?([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(\/[\w.~-]*)*\/?$/i.test(v)) {   // 1.10.0: a Seal ID address or a domain proven there
+      $('acCheck').innerHTML = '<span class="muted">Checking the Seal ID at ' + esc(v) + ' through Tor…</span>';
+      const seq = ++acSeq;
+      acTimer = setTimeout(async () => {
+        const r = await api.call('contacts:resolve', v);
+        if (seq !== acSeq) return;
+        $('acCheck').innerHTML = r.ok
+          ? `<span style="color:var(--accent)">✓ Seal ID ${esc(r.data.sealid)}${r.data.alias ? ' (through ' + esc(r.data.alias) + ')' : ''}</span>${r.data.display ? ' — ' + esc(r.data.display) : ''}<br>It proves the Seal Chat ID with fingerprint <span class="mono">${pretty(r.data.fp)}</span>${r.data.how === 'same-key' ? ' (signed with the same key)' : ''}.`
+          : `<span style="color:var(--amber)">${esc(r.error)}</span>`;
+        if (r.ok && r.data.display && !$('acNick').value) $('acNick').placeholder = r.data.display;
+      }, 700);
       return;
     }
     const r = await api.call('contacts:parse', v);
@@ -967,6 +980,7 @@ async function contactDetails(id) {
       <div class="kv"><span>Their Seal Chat ID</span><span class="mono small selectable">${esc(d.sealId)}</span></div>
       ${d.handle ? `<div class="kv"><span>Their name</span><span class="selectable">${esc(d.handle)}${d.handleWarning ? ' <span class="badge warn">⚠ changed</span>' : ''}</span></div>` : ''}
       ${d.handleWarning ? `<p class="small" style="color:var(--amber)">⚠ ${esc(d.handleWarning)}</p>` : ''}
+      ${d.sealid ? `<div id="cdSealId">${sealidHtml(d.sealid)}</div>` : ''}
       ${d.mailbox ? `<div class="kv"><span>Mailbox</span><span>📬 They have one — messages can be left for them while they're offline${d.mailboxError ? ' <span class="muted small">(last try: ' + esc(d.mailboxError) + ')</span>' : ''}</span></div>` : ''}
       <div class="kv"><span>Last reachable</span><span>${esc(ago(Math.max(d.lastReached || 0, d.lastSeen || 0)))}</span></div>
       ${d.devices ? `<div class="kv"><span>Their devices</span><span>${esc(d.devices.map(x => x.name).join(', '))}</span></div>` : ''}
@@ -994,6 +1008,35 @@ async function contactDetails(id) {
     call('contacts:pickAvatar', id).then(v => { if (!v) return; repaint(v); const r = document.querySelector('input[name=cdPic][value=custom]'); r.disabled = false; r.checked = true; $('cdPick').textContent = 'change…'; }).catch(err => toast(err.message, true));
   };
   if ($('cdKey')) $('cdKey').onclick = () => call('contacts:exportKey', id).then(p => p && toast('Saved'));
+  wireSealId(id);                                                         // 1.10.0
+}
+
+/* 1.10.0: a contact's Seal ID, as checked by this PC through Tor */
+const SID_LABELS = { web: 'Website', dns: 'Domain', github: 'GitHub', x: 'X', mastodon: 'Mastodon', bluesky: 'Bluesky', hackernews: 'Hacker News', reddit: 'Reddit', youtube: 'YouTube', facebook: 'Facebook' };
+function sealidHtml(s) {
+  const status = s.warning ? `<span class="badge warn">⚠ Replaced</span>`
+    : s.ok ? `<span class="badge ok">✔ Proven</span> <span class="muted small">${s.how === 'same-key' ? 'signed with the same key as their Seal Chat' : 'their Seal Chat key signed it'}</span>`
+    : s.checked || s.error ? `<span class="badge warn">Not proven</span>` : `<span class="muted small">checking…</span>`;
+  const proofs = (s.proofs || []).map(p => `<li>${esc(SID_LABELS[p.service] || p.service)}: <span class="selectable">${esc(p.handle)}</span> ${p.status === 'verified' || p.status === 'witnessed' ? '<span class="badge ok">✔</span>' : '<span class="badge">' + esc(p.status) + '</span>'}</li>`).join('');
+  return `<h3 style="margin-top:14px">Seal ID</h3>
+    <div class="kv"><span>Address</span><span><a href="#" data-ext="${esc(s.url)}">${esc(s.url)}</a> ${status}</span></div>
+    ${s.name ? `<div class="kv"><span>Name there</span><span>${esc(s.name)}</span></div>` : ''}
+    ${s.warning ? `<p class="small" style="color:var(--amber)">⚠ ${esc(s.warning)}</p><button class="btn" id="cdSidAccept">I checked with them — trust the new Seal ID</button>` : ''}
+    ${!s.ok && !s.warning && s.why ? `<p class="small muted">${esc(s.why)}</p>` : ''}
+    ${s.error ? `<p class="small muted">Last check: ${esc(s.error)}</p>` : ''}
+    ${proofs ? `<div class="small muted" style="margin-top:6px">Also proven there <span class="small">(as their Seal ID reports)</span>:</div><ul class="small" style="margin:4px 0 0 18px;padding:0">${proofs}</ul>` : ''}
+    ${(s.aliases || []).length ? `<div class="small muted" style="margin-top:4px">Their domains: ${esc(s.aliases.join(' · '))}</div>` : ''}
+    ${s.dnsConfirmed || s.via === 'mirror' ? `<div class="small muted" style="margin-top:4px">${s.dnsConfirmed ? 'Its key is confirmed by its DNS record. ' : ''}${s.via === 'mirror' ? 'Read from a mirror (' + esc(s.mirror || '') + ') — the website blocks Tor.' : ''}</div>` : ''}
+    <div class="row gap wrap" style="margin-top:8px"><button class="btn" id="cdSidCheck">Check again</button>${s.checked ? `<span class="muted small">checked ${esc(ago(s.checked))}</span>` : ''}</div>`;
+}
+function wireSealId(id) {
+  const box = $('cdSealId');
+  if (!box) return;
+  const redraw = s => { box.innerHTML = sealidHtml(s); wireSealId(id); };
+  const chk = $('cdSidCheck');
+  if (chk) chk.onclick = () => { chk.disabled = true; chk.textContent = 'Checking through Tor…'; call('contacts:sealidCheck', id).then(redraw).catch(e => { toast(e.message, true); chk.disabled = false; chk.textContent = 'Check again'; }); };
+  const acc = $('cdSidAccept');
+  if (acc) acc.onclick = () => call('contacts:sealidAccept', id).then(s => { redraw(s); refreshContacts(); }).catch(e => toast(e.message, true));
 }
 
 /* =================================================================
@@ -1005,6 +1048,36 @@ $('sHandleSave').onclick = async () => {
   $('sHandleMsg').textContent = $('sHandle').value.trim() ? 'Checking…' : '';
   try { const m = await call('me:setHandle', $('sHandle').value); $('sHandle').value = m.handle; $('sHandleMsg').textContent = m.handle ? '✓ Checked — people can add you as ' + m.handle : 'Removed'; me = { ...me, ...m }; }
   catch (e) { $('sHandleMsg').textContent = '⚠ ' + e.message; }
+};
+// 1.10.0: your Seal ID — checked through Tor: it must prove THIS Seal Chat ID
+$('sSealIdSave').onclick = async () => {
+  const text = $('sSealId').value.trim(), out = $('sSealIdMsg');
+  if (!text) {
+    try { const m = await call('me:setSealId', ''); me = { ...me, ...m }; out.textContent = 'Removed — your contacts no longer see a Seal ID.'; } catch (e) { out.textContent = '⚠ ' + e.message; }
+    return;
+  }
+  out.textContent = 'Checking your Seal ID through Tor…';
+  let v;
+  try { v = await call('me:sealIdCheck', text); } catch (e) { out.textContent = '⚠ ' + e.message; return; }
+  if (v.ok) {
+    try {
+      const m = await call('me:setSealId', text); me = { ...me, ...m }; $('sSealId').value = m.sealIdUrl;
+      out.innerHTML = `<span style="color:var(--accent)">✓ ${esc(v.url)}${v.alias ? ' (found through ' + esc(v.alias) + ')' : ''} proves this Seal Chat ID${v.how === 'same-key' ? ' — it uses the same key' : ' — signed by your Seal Chat key'}.</span> Your contacts now see it in your contact details.`;
+    } catch (e) { out.textContent = '⚠ ' + e.message; }
+    return;
+  }
+  if (v.needsSignature) {
+    out.innerHTML = `Your Seal ID <b>${esc(v.url)}</b> names this Seal Chat ID, but it uses a different key — Seal Chat must sign it. <button class="btn" id="sSealIdSign">Sign it</button>`;
+    $('sSealIdSign').onclick = async () => {
+      out.textContent = 'Signing and sending the signature to your Seal ID…';
+      try { const v2 = await call('me:sealIdAttest', text); if (v2.ok) return $('sSealIdSave').onclick(); out.textContent = '⚠ ' + (v2.why || 'Not proven yet'); }
+      catch (e) { out.textContent = '⚠ ' + e.message; }
+    };
+    return;
+  }
+  out.innerHTML = `Your Seal ID <b>${esc(v.url)}</b> doesn't mention this Seal Chat ID yet. In your Seal ID admin, add a <b>Seal Chat</b> proof with this ID, then press Check &amp; save again:
+    <div class="row gap" style="margin-top:6px"><code class="grow mono small selectable" style="word-break:break-all">${esc(v.myId)}</code><button class="btn" id="sSealIdCopy">Copy</button></div>`;
+  $('sSealIdCopy').onclick = () => call('clipboard:write', v.myId).then(() => toast('Copied'));
 };
 // 1.8.0: name this device (shown to your contacts in their contact details)
 $('sDeviceRename').onclick = async e => {
@@ -1031,6 +1104,7 @@ async function openSettings(scrollTo) {
   $('sId').textContent = m.sealId || '(appears once connected to Tor)';
   $('sFp').textContent = m.prettyFp || '';
   $('sHandle').value = m.handle || '';                                   // 1.8.0
+  $('sSealId').value = m.sealIdUrl || ''; $('sSealIdMsg').textContent = m.sealIdUrl ? '✓ Your contacts see this Seal ID in your contact details.' : '';   // 1.10.0
   call('device:get').then(d => { $('sDevice').textContent = d ? d.name + ' · ' + d.id.slice(0, 8) : '—'; }).catch(() => {});   // 1.8.0
   loadDevices();                                                         // 1.9.0
   $('sRemember').checked = !!m.remember;

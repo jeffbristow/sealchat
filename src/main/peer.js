@@ -161,7 +161,8 @@ const SYNC_MAX_QUEUE = 5000;                                // events waiting fo
 const SYNC_BATCH = 200 * 1024;                              // bytes of events per sync frame
 // contact fields that belong to THIS device only (never copied between your devices)
 const LOCAL_FIELDS = new Set(['lastError', 'mailboxError', 'lastSeen', 'lastReached', 'lastMailbox', 'mailboxVia', 'profileSent', 'devicesSent', 'mboxSent',
-  'olderVersion', 'holdOk', 'holdNo', 'noHold', 'lastDevice', 'unread', 'lastText', 'lastAt', 'lastDir', 'addressChecked']);
+  'olderVersion', 'holdOk', 'holdNo', 'noHold', 'lastDevice', 'unread', 'lastText', 'lastAt', 'lastDir', 'addressChecked',
+  'sealidInfo', 'sealidChecked']);                          // 1.10.0: each device checks a contact's Seal ID itself
 const holdTag = fp => crypto.createHash('sha256').update('sealchat-hold-v1|' + String(fp).toUpperCase()).digest('hex').slice(0, 32);
 
 /* =================================================================
@@ -529,6 +530,10 @@ class Peer extends EventEmitter {
       case 'profile':
         if (o.name) c.name = String(o.name).slice(0, 80);
         if ('avatar' in o) { c.sharedAvatar = cleanAvatar(o.avatar); c.sharedAvatarAt = Date.now(); }
+        if ('sealid' in o) {                                            // 1.10.0: their Seal ID address (checked by main.js through Tor)
+          const u = cleanSealId(o.sealid);
+          if (u !== (c.sealid || null)) { c.sealid = u; delete c.sealidInfo; delete c.sealidChecked; this.emit('sealid', c); }
+        }
         break;
       case 'react': {                                                   // 1.8.0
         const chat = this.store.chat(c.id);
@@ -1265,6 +1270,7 @@ class Peer extends EventEmitter {
   _syncSettings() {
     const s = this.store.settings, me = this.store.vault.me || {};
     return { displayName: s.displayName, readReceipts: s.readReceipts, allowRequests: s.allowRequests, contactMailbox: s.contactMailbox,
+      mySealId: s.mySealId || null,                                    // 1.10.0
       me: { avatar: me.avatar || null, shareAvatar: me.shareAvatar !== false, avatarAt: me.avatarAt || 0 } };
   }
   syncSettings() { this._syncOut({ e: 'settings', s: this._syncSettings() }); }
@@ -1593,6 +1599,7 @@ class Peer extends EventEmitter {
         const patch = {};
         if (typeof x.displayName === 'string') patch.displayName = x.displayName.slice(0, 80);
         for (const k of ['readReceipts', 'allowRequests', 'contactMailbox']) if (typeof x[k] === 'boolean') patch[k] = x[k];
+        if ('mySealId' in x) patch.mySealId = cleanSealId(x.mySealId) || undefined;   // 1.10.0: your Seal ID, on all your devices
         this.store.setSettings(patch);
         if (x.me && typeof x.me === 'object' && (x.me.avatarAt || 0) >= ((v.me || {}).avatarAt || 0)) {
           v.me = { ...(v.me || {}), shareAvatar: x.me.shareAvatar !== false, avatarAt: x.me.avatarAt || 0, ...(x.me.avatar !== undefined ? { avatar: cleanAvatar(x.me.avatar) } : {}) };
@@ -1621,9 +1628,10 @@ class Peer extends EventEmitter {
   /** What contacts get: your name, and your picture only if you share it. */
   profile() {
     const me = this.store.vault.me || {};
-    return { name: this.store.settings.displayName || this.id.name || '', avatar: me.shareAvatar !== false && me.avatar ? me.avatar : null };
+    return { name: this.store.settings.displayName || this.id.name || '', avatar: me.shareAvatar !== false && me.avatar ? me.avatar : null,
+      sealid: this.store.settings.mySealId || null };                 // 1.10.0: your Seal ID address
   }
-  _profileVersion() { const p = this.profile(); return crypto.createHash('sha256').update(p.name + '|' + (p.avatar || '')).digest('hex').slice(0, 16); }
+  _profileVersion() { const p = this.profile(); return crypto.createHash('sha256').update(p.name + '|' + (p.avatar || '') + (p.sealid ? '|' + p.sealid : '')).digest('hex').slice(0, 16); }
 
   /** Queues your current profile for a contact if they don't have it yet. */
   _maybeShareProfile(c) {
@@ -1631,7 +1639,7 @@ class Peer extends EventEmitter {
     const ver = this._profileVersion();
     if (c.profileSent === ver || (this.store.vault.ctl || []).some(x => x.to === c.id && x.k === 'profile' && x.ver === ver)) return;
     const p = this.profile();
-    this._queueCtl(c.id, { k: 'profile', name: p.name, avatar: p.avatar, ver });
+    this._queueCtl(c.id, { k: 'profile', name: p.name, avatar: p.avatar, sealid: p.sealid, ver });
   }
 
   /** After you change your name or picture: send it to everyone. */
@@ -1918,6 +1926,12 @@ function fmtSize(n) {
   return (n >= 100 ? Math.round(n) : n.toFixed(1)) + ' ' + u[i];
 }
 function cleanMime(m) { m = String(m || '').toLowerCase().slice(0, 100); return /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/.test(m) ? m : 'application/octet-stream'; }
+/** 1.10.0: a Seal ID address from a contact's profile: https://host[/path], or null. */
+function cleanSealId(v) {
+  const u = String(v || '').trim();
+  return /^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(\/[A-Za-z0-9._~-]+)*$/.test(u) && u.length <= 200 ? u : null;
+}
+
 /** A shared profile picture: a small JPEG/PNG as a data URL, or null. */
 function cleanAvatar(a) { return typeof a === 'string' && a.length < 120000 && /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(a) ? a : null; }
 function cleanThumb(t) { return typeof t === 'string' && t.length < 90000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(t) ? t : null; }

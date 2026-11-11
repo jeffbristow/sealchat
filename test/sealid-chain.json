@@ -1,0 +1,43 @@
+{
+ "url": "https://id.example.test",
+ "keys": {
+  "7FBADF6DC810923988CC01308E17160537FD06AE": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nxjMEavRdqBYJKwYBBAHaRw8BAQdAUCvmWURiJoBnesDOY+2qtwk/X9L1YGwl\nm2cQLCy7WOfNCkNoYWluIFRlc3TCwBMEExYKAIUFgmr0XagDCwkHCRCOFxYF\nN/0GrkUUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdwanMub3JnfM67\n9doGwZoiG0l05e6iZaysTe+Pq7UFPsBg3h3Zv4UFFQoIDgwEFgACAQIZAQKb\nAwIeARYhBH+6323IEJI5iMwBMI4XFgU3/QauAACC6QD+PYknIDyFV3A0rdbD\nPB31XWxaNHlEpK/o0fnzf5gQib4A/2jgHSOTKkjtNcVAye5v8Z084QR+1RIb\nsgBXVu7ZMJEMzjgEavRdqBIKKwYBBAGXVQEFAQEHQO76y7YPxe2OurD7Yq/A\nKXqtyyyrayzsGWHCT7HbSxB/AwEIB8K+BBgWCgBwBYJq9F2oCRCOFxYFN/0G\nrkUUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdwanMub3JnRDM9ATrv\nFAZNV1SrtSbCp1R7iRs2coBGV5XEgfHoKFwCmwwWIQR/ut9tyBCSOYjMATCO\nFxYFN/0GrgAAYR8A/RhDhHWrYx7LyO2eJAA16ZUk21GaKnskMbZlCuD0Euhj\nAQCt6T+frzjYB+CYSGdloAAaumaHRI3ZAO+hx0/9v6qzBg==\n=bj/o\n-----END PGP PUBLIC KEY BLOCK-----\n"
+ },
+ "links": [
+  {
+   "payload": "{\"v\":1,\"seq\":1,\"prev\":null,\"ts\":1794398656,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"eldest\",\"body\":{\"name\":\"Chain Test\",\"bio\":\"hello\"}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcmf4bNq9coVPulxmbxYVtx/1wcubBeFddhcc6pGQ\n6n56uRYhBH+6323IEJI5iMwBMI4XFgU3/QauAACr4wD+IQf8TqBViODGOzgx\nZvAiwtHWPT0nDIbTThW3HXFxEzcBANA3JWKlYzfGAfCD5MeUYBKsh+Qu97JZ\nnbJSIfG+ObAM\n=+YOA\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":2,\"prev\":\"0fcf0e753cc3343894185a92de5778fecfe0941521ed774e3a59a5f3f98c21ae\",\"ts\":1794398657,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"proof\",\"body\":{\"service\":\"web\",\"handle\":\"example.test\"}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcmdRwZ9bxHwS2A4FFPmiRnMT1mZoEhGRCX4T7jT+\nSiv6iBYhBH+6323IEJI5iMwBMI4XFgU3/QauAAAyRwD/dsNuJ+PnWFJW/+Zy\nwkV7VMTmKPk8SFhAWmDdDFRWys4A/2rqX1b/+nYshK/8To6QkWDUx2gQQa84\noHLxUE5vvBcM\n=99iD\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":3,\"prev\":\"2939299460fc0a82fe9ca79e87df6e455323a8497fa4347ab8e6ccdb1b0e360e\",\"ts\":1794398658,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"proof\",\"body\":{\"service\":\"github\",\"handle\":\"octo\"}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcme97TrvWioT9TPzM0aq0taroGRGjPFiimXIdKWc\nhZcCEhYhBH+6323IEJI5iMwBMI4XFgU3/QauAACMUwD9G5hi9iYqP5l9n/fZ\nR0HJ4it3ZkVrLG2uf21CwZdMyy0A/03Xo8PAXnFM7Jdei0lWf44wFykByh07\n3NwJJQ7OG8QM\n=unpv\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":4,\"prev\":\"46384dd589514cfacdd63ae8434635eb944c2c79d61231b5ed0218ac398f25fe\",\"ts\":1794398659,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"profile\",\"body\":{\"name\":\"Chain Tester\",\"bio\":\"updated\"}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcmcfMohDJeNx//u3Q3mJzJH60LG+KkiVIVzGejzX\nFE0wKBYhBH+6323IEJI5iMwBMI4XFgU3/QauAAB+0QEAy/AwMY6GhxqLVECQ\nzg4N3B7Fper/U2TRBf3cVgWAn1kBAIzzIsdMEZMx0zDqQYIGhxlKV5vZVuFI\np3vqnM6VFBwK\n=ZGQk\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":5,\"prev\":\"6edcfe611182178204c123b2097d0c087a9282952219f71441fa4d5f3820f2c4\",\"ts\":1794398660,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"mirrors\",\"body\":{\"urls\":[\"https://mirror.example.test/seal-id.json\"]}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcmcyJZ7lcLmxwdqziuBnJ9wRJ/XgheIdUNSLdquZ\nA5PA6BYhBH+6323IEJI5iMwBMI4XFgU3/QauAACuPwD9ETNKqF4L+kc3Z1/T\nRWtUmTieLrxfebedR7kMJE9OroEA/0jFk4lB5BIL/ZaoXxRqgU4Qk5P5Stc7\nr3jzoacny+4F\n=VLV+\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":6,\"prev\":\"0b37192517c81d69297759a0d01fe5f012d73781cccfe602edadecddcaafe258\",\"ts\":1794398661,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"revoke\",\"body\":{\"seqs\":[2]}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcmf0dWFm+jScidNeVxBV9yhZIWH/g7DkV/WuZAek\nzyVyJBYhBH+6323IEJI5iMwBMI4XFgU3/QauAADwEAD/X4vaFs6fqlNQRU0K\nKHoKoRX3kKYD3cS6JUZkxmKCtFMBAMqr9x9AOPQw3hNUrz9bF5QKDiTcM8MF\nqDFhnoDIHQYL\n=9je3\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":7,\"prev\":\"00aed7302f90059185ec2633a24702c1a7bde17ab5bdccc3f6bf46d315625906\",\"ts\":1794398662,\"url\":\"https://id.example.test\",\"fp\":\"7FBADF6DC810923988CC01308E17160537FD06AE\",\"type\":\"rotate\",\"body\":{\"new_fp\":\"733604CCC73DD8CC4E6C4FC0359BAFFCFE3A3AD617130461EAAEDD3ADC04EE03\",\"new_key\":\"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nxioGavRdqBsAAAAgv9fWyZh4/9XvcY4uVgoZXqmc4bQRMlewfGlbUWKEG8TC\\nrQYfGwoAAAA+BYJq9F2oAwsJBwUVCggODAQWAAIBApsDAh4BIqEGczYEzMc9\\n2MxObE/ANZuv/P46OtYXEwRh6q7dOtwE7gMAAAAAIewgBVdDEvRMe4nl1cl0\\noOLxJNk2IIrqk0JzJ151qHFRiyEGFFnGM3aiq9pTYTUkyFI3wV5OGB4tZEqx\\nYX7jxEZYy9eX9DXK5SLHYK1OLg6zRBN7GfK2Z1R08S8cNjpr4z4GzQpDaGFp\\nbiBUZXN0wpsGExsKAAAALAWCavRdqAIZASKhBnM2BMzHPdjMTmxPwDWbr/z+\\nOjrWFxMEYequ3TrcBO4DAAAAACVWIJLmNfz9ZY7Hpc2E/WzhQM11f2xzihSB\\nG7vNyO7lCI+Gmcu0KB6oj5SGCecXFSgFjN+Kg4ovslYa77O+HsK6bmnmy9yL\\ngxUmxQRcOxp1lW7C0TTQlN9HvQbeDx9tQZCPAM4qBmr0XagZAAAAIOUXFKSy\\nRaniXGyKefSJ4du60wRfQE7d8XWdYc6Rl5NFwpsGGBsKAAAALAWCavRdqAKb\\nDCKhBnM2BMzHPdjMTmxPwDWbr/z+OjrWFxMEYequ3TrcBO4DAAAAAJ+bIEIq\\nkNuIxotjoVefgobU29v+ekxUBbE6xw4W/I7e3tAeSVIZ9rbc/XiXi6LyqIGZ\\n2y7HPSHL32V9ofko7zRVgxt9U7wRCfqCjEIokYiue+YqxVmclNFiUL9G1rT1\\n3EDOBw==\\n-----END PGP PUBLIC KEY BLOCK-----\\n\"}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwrsEABYKAG0Fgmr0XagJEI4XFgU3/QauRRQAAAAAABwAIHNhbHRAbm90YXRp\nb25zLm9wZW5wZ3Bqcy5vcmezyCmll7pBQwtt5LAGowdyxWm8G/Ys5RLk4hKr\n8zNPixYhBH+6323IEJI5iMwBMI4XFgU3/QauAAB9zwEAo6SQ0aG2JFuEJMyM\nl6fvADWKS3/qH2jNJ5KXltcbrMIBAJchHIcvqYZQHBZwinT0y5J5uX9rqevG\nE3KbtGP3/u4B\n=TvEX\n-----END PGP SIGNATURE-----\n",
+   "sig_new": "-----BEGIN PGP SIGNATURE-----\n\nwpgGABsKAAAAKQWCavRdqCKhBnM2BMzHPdjMTmxPwDWbr/z+OjrWFxMEYequ\n3TrcBO4DAAAAACWRIHre93vxWnIhD5HGpsrydtpWNtcvhBQ1oCDdBhJ03Vxo\nhF4sWXKBMHfPT4NVeumcwzBNGKRzEg5Idlpnuv1N2AYfogr6tgnThmkcPl7o\nkF/ntERB+Uv80+wKbipz9Zy2AQ==\n-----END PGP SIGNATURE-----\n"
+  },
+  {
+   "payload": "{\"v\":1,\"seq\":8,\"prev\":\"5a867f1d64f9e9ec44238463c1bd39ef55e0c89c7432c2acdc0b4fd68cb4fff0\",\"ts\":1794398663,\"url\":\"https://id.example.test\",\"fp\":\"733604CCC73DD8CC4E6C4FC0359BAFFCFE3A3AD617130461EAAEDD3ADC04EE03\",\"type\":\"vouch\",\"body\":{\"target\":\"https://id.other.test\",\"target_fp\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"target_seq\":3,\"target_hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"proofs\":[{\"seq\":2,\"service\":\"x\",\"handle\":\"other\",\"how\":\"auto\"}]}}",
+   "sig": "-----BEGIN PGP SIGNATURE-----\n\nwpgGABsKAAAAKQWCavRdqCKhBnM2BMzHPdjMTmxPwDWbr/z+OjrWFxMEYequ\n3TrcBO4DAAAAALnTIBqE4tW8c1Fq33oxilMFBYuFkmxdiJVYbUowGH/D+vzZ\nOZ8WQX+8wgmpolhXAYJNALijcIIM3eMsbfYsSRyxqDgLQKMk28SmBbMyqf0A\nhW28g8pgQC1ZfVVQODEaioPgDw==\n-----END PGP SIGNATURE-----\n"
+  }
+ ],
+ "fp1": "7FBADF6DC810923988CC01308E17160537FD06AE",
+ "fp2": "733604CCC73DD8CC4E6C4FC0359BAFFCFE3A3AD617130461EAAEDD3ADC04EE03"
+}

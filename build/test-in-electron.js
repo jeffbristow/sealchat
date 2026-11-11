@@ -13,7 +13,7 @@ const { execFileSync } = require('child_process');
 const path = require('path');
 const electron = require('electron');          // (in plain Node this is the path to the Electron program)
 const root = path.join(__dirname, '..');
-const tests = ['core-test', 'devices-test', 'replies-test', 'holds-test', 'invites-test', 'linking-test', 'names-test', 'files-test', 'update-test', 'android-update-test', 'sha3-test', 'noicu-test'];
+const tests = ['core-test', 'devices-test', 'replies-test', 'holds-test', 'invites-test', 'linking-test', 'names-test', 'sealid-test', 'files-test', 'update-test', 'android-update-test', 'sha3-test', 'noicu-test'];
 for (const t of tests) {
   process.stdout.write(`[electron] ${t}: `);
   const out = execFileSync(electron, [path.join(root, 'test', t + '.js')], { cwd: root, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', timeout: 15 * 60e3 });

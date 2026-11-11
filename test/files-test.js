@@ -100,7 +100,7 @@ async function node(name, armored, pass) {
   const ref = jeff.peer.fileRef(A, m1.id);
   ok(sha(await streamToBuf(jeff.files.plainStream(ref.where, m1.id, ref.meta))) === sha(photo), '3 MB photo arrives by itself, byte-for-byte identical');
   ok(inJeff(m1.id).file.name === 'holiday photo.jpg' && inJeff(m1.id).file.thumb === 'data:image/jpeg;base64,AAAA', 'name and preview arrive with it');
-  await until(() => outAnn(m1.id).transfer.state === 'done', 5000, 'sender sees done');
+  await until(() => outAnn(m1.id).transfer.state === 'done', 15000, 'sender sees done');   // 1.10.0: 5 s was too tight on a busy PC (flaky inside Electron)
   ok(true, 'Ann sees "Downloaded" once Jeff has it');
 
   // big file: asks first

@@ -31,7 +31,8 @@ const channels = new Set([
   // 1.4.0 web access
   'web:status', 'web:connect', 'web:disconnect', 'web:enable', 'web:pair', 'web:copyPairLink', 'web:approve', 'web:decline', 'web:cancelPair', 'web:removeDevice',
   'web:devicePush',  // 1.6.0 notifications per device
-  'update:first', 'update:firstSkip'   // 1.6.0 first-run update
+  'update:first', 'update:firstSkip',  // 1.6.0 first-run update
+  'me:sealIdCheck', 'me:setSealId', 'me:sealIdAttest', 'contacts:sealidCheck', 'contacts:sealidAccept'   // 1.10.0 Seal ID
 ]);
 
 contextBridge.exposeInMainWorld('api', {

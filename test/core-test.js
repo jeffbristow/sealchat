@@ -163,6 +163,19 @@ async function makeNode(name, armored, pass) {
   ok(true, 'turning sharing off removes the picture on the contact\'s side');
   ok(!mal.store.contact(ann.identity.fp), 'non-contacts get no profile');
 
+  // ---- 10. Seal ID address in the profile (1.10.0) ----
+  let sidEvent = null;
+  jeff.peer.once('sealid', c => { sidEvent = c.sealid; });
+  ann.store.setSettings({ mySealId: 'https://id.example.com' });
+  ann.peer.shareProfileAll(); ann.peer.retryNow(jeff.identity.fp);
+  await until(() => jeff.store.contact(ann.identity.fp).sealid === 'https://id.example.com', 8000, 'Seal ID shared');
+  ok(sidEvent === 'https://id.example.com', 'a Seal ID address reaches the contact with the profile (and is announced for checking)');
+  ann.store.setSettings({ mySealId: 'javascript:alert(1)' });
+  ann.peer.shareProfileAll(); ann.peer.retryNow(jeff.identity.fp);
+  await until(() => jeff.store.contact(ann.identity.fp).sealid === null, 8000, 'bad Seal ID dropped');
+  ok(true, 'anything that is not an https address is dropped on the receiving side');
+  ann.store.setSettings({ mySealId: undefined });
+
   await jeff.peer.stop(); await ann.peer.stop(); await mal.peer.stop();
   socks.close();
   console.log(`\nCore tests: ${passed} passed`);

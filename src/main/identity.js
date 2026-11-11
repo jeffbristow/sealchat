@@ -148,6 +148,13 @@ class Identity {
     return Buffer.from(sig).toString('base64');
   }
 
+  /** 1.10.0: an ASCII-armored detached signature over the exact UTF-8 bytes of text (for Seal ID). */
+  async signArmored(text) {
+    if (!this.unlocked) throw new Error('Your key is locked');
+    const message = await openpgp.createMessage({ binary: Buffer.from(String(text), 'utf8') });
+    return openpgp.sign({ message, signingKeys: this.priv, detached: true, date: checkDate(this.priv) });
+  }
+
   async verifyText(text, sigB64, signerArmored) {
     try {
       const message = await openpgp.createMessage({ text: String(text) });

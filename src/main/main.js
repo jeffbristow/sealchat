@@ -40,6 +40,7 @@ const { Updater } = require('./updater');
 const { WebAccess } = require('./webaccess');
 const { WebFiles, WEB_FILE_MAX } = require('./webfiles');   // 1.7.0: files in Seal Chat Web
 const names = require('./names');                            // 1.8.0: name@domain
+const sealid = require('./sealid');                          // 1.10.0: Seal ID (proven identities)
 const invites = require('./invites');                        // 1.8.0: invite codes
 const linking = require('./linking');                        // 1.9.0: linking another device to your ID
 const jsQR = require('jsqr');
@@ -202,7 +203,7 @@ async function startPeer() {
   if (peer.running) return;
   if (peerStarting) return peerStarting;
   peerStarting = (async () => {
-    try { await peer.start(); send('me', meInfo()); setTimeout(() => syncMailbox().then(() => fetchMailbox()), 4000); if (web) setTimeout(() => web.shareNow(), 5000); setTimeout(() => recheckHandles().catch(() => {}), 60e3); }   // 1.8.0: mailbox, names · 1.9.3: web access to your other devices
+    try { await peer.start(); send('me', meInfo()); setTimeout(() => syncMailbox().then(() => fetchMailbox()), 4000); if (web) setTimeout(() => web.shareNow(), 5000); setTimeout(() => recheckHandles().catch(() => {}), 60e3); setTimeout(() => recheckSealIds().catch(() => {}), 90e3); }   // 1.8.0: mailbox, names · 1.9.3: web access to your other devices
     catch (e) { console.error('peer start:', e.message); send('tor', { ...tor.status(), error: 'Could not publish your address: ' + e.message }); }
     finally { peerStarting = null; updateTray(); }
   })();
@@ -256,6 +257,7 @@ function setupPeer() {
   });
   peer.on('devices', debounce(() => { if (peer.running) send('devices', peer.devicesStatus()); }, 300));
   peer.on('settings', debounce(() => send('me', meInfo()), 300));
+  peer.on('sealid', c => { checkContactSealId(c.id).catch(() => {}); });   // 1.10.0: a contact shared (or changed) their Seal ID
   peer.on('accepted', c => notify('Contact added', `${displayName(c)} accepted your request.`, () => { showWindow(); send('open', { contactId: c.id }); }));
 }
 
@@ -277,7 +279,8 @@ function meInfo() {
     platform: process.platform,
     avatar: (store.vault.me || {}).avatar || null,                 // 1.2.0
     shareAvatar: (store.vault.me || {}).shareAvatar !== false,
-    handle: S().myHandle || ''                                      // 1.8.0: your name@domain, if you set one
+    handle: S().myHandle || '',                                     // 1.8.0: your name@domain, if you set one
+    sealIdUrl: S().mySealId || ''                                  // 1.10.0: your Seal ID
   };
 }
 
@@ -300,6 +303,12 @@ async function resolveAdd(text) {
     const r = await names.lookup(t, lookupNet());
     return { kind: 'name', id: r.id, fp: r.fp, onion: r.onion, handle: r.handle, display: r.display };
   }
+  if (sealid.looksLikeAddress(t)) {                               // 1.10.0: a Seal ID address, or a domain its owner proved
+    const r = await sealid.resolve(t, lookupNet());
+    const ids = await sealid.provenSealChatIds(r.state, r.bundle);
+    if (!ids.length) throw new Error(`The Seal ID ${r.url} doesn't prove a Seal Chat ID — ask them for their Seal Chat ID instead`);
+    return { kind: 'sealid', id: ids[0].id, fp: ids[0].fp, onion: ids[0].onion, sealid: r.url, alias: r.alias, display: r.state.name, how: ids[0].how };
+  }
   const p = parseId(t);
   return { kind: 'id', id: `sealchat:${p.onion}:${p.fp}`, fp: p.fp, onion: p.onion };
 }
@@ -318,6 +327,7 @@ async function addByText(text, { nick, note } = {}) {
   const r = await resolveAdd(text);
   const c = peer.addContact(r.id, { nick: nick || r.display || '', note });
   if (r.handle) { c.handle = r.handle; c.handleFp = r.fp; c.handleChecked = Date.now(); c.handleWarning = null; store.putContact(c); }
+  if (r.kind === 'sealid' && !c.sealid) { c.sealid = r.sealid; store.putContact(c); checkContactSealId(c.id).catch(() => {}); }   // 1.10.0
   return c;
 }
 /** Once a day: does each contact's name@domain still point to them? (Never switches — only warns.) */
@@ -332,6 +342,63 @@ async function recheckHandles() {
     c.handleChecked = Date.now(); store.putContact(c);
   }
   send('contacts');
+}
+
+/* =================================================================
+ * 3c. SEAL ID (1.10.0) — proven identities (sealid.js)
+ * ================================================================= */
+/**
+ * Fetch a contact's Seal ID through Tor, verify it here and check it belongs to
+ * this contact. Pinned on first sight; a replaced Seal ID is a warning (never trusted silently).
+ */
+async function checkContactSealId(id) {
+  const c = store.contact(id);
+  if (!c) return;
+  if (!c.sealid) { if (c.sealidInfo) { delete c.sealidInfo; delete c.sealidPin; store.putContact(c); send('contacts'); } return; }
+  let info;
+  try {
+    const r = await sealid.resolve(c.sealid, lookupNet(), { mirrors: (c.sealidPin && c.sealidPin.mirrors) || [] });   // mirrors seen before still work if the site blocks Tor
+    const link = await sealid.sealChatLink(r.state, r.bundle, c.fp);
+    info = sealid.summary(r, link);
+    const pin = sealid.pinCheck(c.sealidPin, r.state);
+    if (pin === 'changed') {
+      info.ok = false;
+      info.warning = `This Seal ID was REPLACED since you first saw it (its key is now ${prettyFp(r.state.fp)}). That happens when someone loses their key — or when someone else took over the address. Check with ${displayName(c)} before trusting it again.`;
+    } else if (link.ok && pin !== 'behind') {                 // an older copy (a mirror not updated yet) keeps the newer pin
+      c.sealidPin = sealid.pinOf(r.state);
+    }
+  } catch (e) {
+    // unreachable / not a Seal ID: keep what we knew, say why
+    info = { ...(c.sealidInfo || { url: c.sealid, ok: false, proofs: [], aliases: [] }), error: e.message, errorAt: Date.now() };
+  }
+  const now = store.contact(id);
+  if (!now || now.sealid !== c.sealid) return;              // changed meanwhile
+  now.sealidInfo = info; now.sealidChecked = Date.now(); if (c.sealidPin) now.sealidPin = c.sealidPin;
+  store.putContact(now);
+  send('contacts');
+}
+/** Every 6 hours: contacts whose Seal ID was last checked more than a day ago. */
+async function recheckSealIds() {
+  if (!peer || !peer.running || !tor.ready) return;
+  for (const c of store.contacts()) {
+    if (c.sealid && Date.now() - (c.sealidChecked || 0) > 24 * 3600e3) await checkContactSealId(c.id).catch(() => {});
+  }
+}
+/** What contacts and the window see about a contact's Seal ID. */
+function sealidView(c) {
+  if (!c.sealid) return null;
+  const i = c.sealidInfo || {};
+  return { url: c.sealid, alias: i.alias || null, ok: !!i.ok, how: i.how || null, why: i.why || null, warning: i.warning || null, error: i.error || null,
+    name: i.name || '', prettyFp: i.prettyFp || '', proofs: i.proofs || [], aliases: i.aliases || [], checked: c.sealidChecked || 0,
+    via: i.via || null, mirror: i.mirror || null, dnsConfirmed: !!i.dnsConfirmed };
+}
+/** Your own Seal ID: does it prove THIS Seal Chat ID? */
+async function mySealIdStatus(text) {
+  const r = await sealid.resolve(text, lookupNet());
+  const link = await sealid.sealChatLink(r.state, r.bundle, identity.fp);
+  const myId = meInfo().sealId;
+  return { r, link, view: { url: r.url, alias: r.alias, name: r.state.name, ok: link.ok, how: link.how, why: link.why,
+    needsSignature: !link.ok && !!link.handle, signHandle: link.handle, needsProof: !link.ok && !link.handle, myId } };
 }
 
 /* =================================================================
@@ -527,6 +594,7 @@ function registerIpc() {
       lastSeen: c.lastSeen || 0, lastReached: c.lastReached || 0, lastError: c.lastError || null,
       requested: !!c.requested, failReason: c.failReason || null, nextTry: peer.nextAttempt(c.id),
       handle: c.handle || '', handleWarning: c.handleWarning || null,                         // 1.8.0: name@domain
+      sealid: sealidView(c),                                                                 // 1.10.0: their Seal ID
       invite: c.invite && c.status === 'pending-in' ? c.invite.label || 'an invite code' : null,  // 1.8.0: their request came with your invite
       viaInvite: c.viaInvite && c.status === 'pending-out' ? { multi: !!c.viaInvite.multi } : null,
       mailbox: !!c.mailbox, mailboxError: c.mailboxError || null,                            // 1.8.0: they have a mailbox
@@ -550,6 +618,30 @@ function registerIpc() {
     if (r.fp !== identity.fp) throw new Error(`${r.handle} points to a different Seal Chat ID (fingerprint ${prettyFp(r.fp)}) — add YOUR ID for that name on your website first`);
     store.setSettings({ myHandle: r.handle });
     return meInfo();
+  });
+  // ---- 1.10.0: Seal ID ----
+  handle('me:sealIdCheck', async text => (await mySealIdStatus(text)).view);
+  handle('me:setSealId', async text => {
+    const t = String(text || '').trim();
+    if (!t) { store.setSettings({ mySealId: undefined }); peer.shareProfileAll(); return meInfo(); }
+    const s = await mySealIdStatus(t);
+    if (!s.view.ok) throw new Error(s.view.needsSignature ? 'Your Seal ID names this Seal Chat ID — press “Sign it” so Seal Chat can prove it' : `Your Seal ID doesn't mention this Seal Chat ID yet. In your Seal ID admin, add a “Seal Chat” proof with: ${s.view.myId}`);
+    store.setSettings({ mySealId: s.r.url });
+    peer.shareProfileAll();                                         // contacts get it with your profile
+    return meInfo();
+  });
+  handle('me:sealIdAttest', async text => {
+    const s = await mySealIdStatus(text);
+    if (s.view.ok) return s.view;
+    if (!s.view.needsSignature) throw new Error(`Add a “Seal Chat” proof with ${s.view.myId} in your Seal ID admin first`);
+    await sealid.attest(s.r, s.view.signHandle, identity, lookupNet());
+    return (await mySealIdStatus(text)).view;
+  });
+  handle('contacts:sealidCheck', async id => { await checkContactSealId(id); const c = store.contact(id); return c ? sealidView(c) : null; });
+  handle('contacts:sealidAccept', async id => {                    // trust a replaced Seal ID after checking with them
+    const c = store.contact(id); if (!c) throw new Error('Unknown contact');
+    delete c.sealidPin; store.putContact(c);
+    await checkContactSealId(id); return sealidView(store.contact(id));
   });
   handle('contacts:accept', id => contactView(peer.accept(id)));
   handle('contacts:decline', id => { peer.decline(id); return true; });
@@ -1277,6 +1369,7 @@ function setupWeb() {
   web.on('woken', () => fetchMailbox());              // 1.8.0: a contact left something just now
   setInterval(() => fetchMailbox(), 10 * 60e3);
   setInterval(() => recheckHandles().catch(() => {}), 6 * 3600e3);    // 1.8.0
+  setInterval(() => recheckSealIds().catch(() => {}), 6 * 3600e3);    // 1.10.0
   web.on('log', l => console.log(l));
   web.on('pairRequest', r => {
     showWindow();

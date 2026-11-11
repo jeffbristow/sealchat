@@ -1,6 +1,27 @@
 =====================================================================
- SEAL CHAT 1.9.7 — private peer-to-peer chat over Tor, with PGP
+ SEAL CHAT 1.10.0 — private peer-to-peer chat over Tor, with PGP
 =====================================================================
+
+WHAT'S NEW IN 1.10.0   (an update file only)
+  • New: Seal ID. A Seal ID (github.com/jeffbristow/SealID) is a
+    self-hosted identity page signed with an OpenPGP key that proves
+    which websites, domains and accounts (GitHub, X, Mastodon …) are
+    yours. Settings → Your Seal ID: enter it (or a domain you proved
+    there) and your contacts see it, PROVEN, in your contact details.
+  • Seal Chat checks a contact's Seal ID itself, through Tor: every
+    signature in it, and that it belongs to THIS contact — signed with
+    the same key as their Seal Chat, or (with two keys) a Seal Chat proof
+    that their Seal Chat key signed back ("Sign it" in Settings does that
+    for you). It remembers what it saw and warns if a Seal ID is later
+    replaced instead of extended. Checked again once a day.
+  • Add contact accepts a Seal ID or a domain proven there (id.example.com,
+    example.com): Seal Chat finds the Seal Chat ID that Seal ID proves.
+  • Many web hosts block visitors that come through Tor. Seal Chat then
+    says so, uses the Seal ID's mirrors (from its DNS key record), and
+    Settings → Privacy → "If a website blocks Tor, contact it directly"
+    also covers Seal IDs. DNS records are read with DNS-over-HTTPS,
+    through Tor.
+  • New test: test/sealid-test.js (also inside Electron and on Node 18).
 
 WHAT'S NEW IN 1.9.7   (an update file only · and the new Ubuntu Touch app)
   • New: Seal Chat for Ubuntu Touch (24.04, arm64) —
@@ -571,6 +592,7 @@ FOR DEVELOPERS
     src/main/backup.js    password-protected backups
     src/main/webaccess.js web access: wake checks, pairing, PIN, device API (1.4.0)
     src/main/webhttp.js   HTTPS to your website through Tor (1.4.0)
+    src/main/sealid.js    Seal ID: verify a Seal ID chain, aliases, link to a Seal Chat ID (1.10.0)
     src/main/main.js      app window, tray, notifications, IPC
     src/renderer/*        the window (HTML/CSS/JS)
   Tor binaries: resources/tor/win-x64 (from the kmp-tor-resource project,
